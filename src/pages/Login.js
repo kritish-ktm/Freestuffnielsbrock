@@ -1,0 +1,123 @@
+// src/pages/Login.js
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabase";
+
+function Login() {
+  const { signInWithGoogle } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // Sign in with Google
+      await signInWithGoogle();
+
+      // Wait a moment for the user to be set
+      setTimeout(async () => {
+        try {
+          // Get the current user
+          const { data: { user } } = await supabase.auth.getUser();
+
+          if (user) {
+            // Check if user has completed profile
+            const fullName = user.user_metadata?.full_name;
+            const section = user.user_metadata?.section;
+
+            if (fullName && section) {
+              // Profile already completed, go to home
+              navigate("/", { replace: true });
+            } else {
+              // New user, go to onboarding
+              navigate("/onboarding", { replace: true });
+            }
+          }
+        } catch (err) {
+          console.error("Error checking user:", err);
+          // If there's an error checking, redirect to onboarding to be safe
+          navigate("/onboarding", { replace: true });
+        }
+      }, 1000);
+    } catch (loginError) {
+      console.error("Login failed:", loginError);
+      setError("Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-gradient-primary">
+      <div className="card shadow-lg border-0 rounded-lg" style={{ maxWidth: "420px", width: "100%" }}>
+        <div className="card-body p-5 text-center">
+
+          {/* Custom Logo */}
+          <img
+            src="/logo192.png"
+            alt="Free Stuff Niels Brock"
+            className="mb-4"
+            height="100"
+            style={{ objectFit: "contain" }}
+          />
+
+          {/* Title */}
+          <h1 className="h3 fw-bold text-primary mb-2">
+            Free Stuff Niels Brock
+          </h1>
+          <p className="text-muted mb-4">
+            Login with your student Google account
+          </p>
+
+          {/* Error Message */}
+          {error && (
+            <div className="alert alert-danger alert-dismissible fade show" role="alert">
+              {error}
+              <button 
+                type="button" 
+                className="btn-close" 
+                onClick={() => setError("")}
+              ></button>
+            </div>
+          )}
+
+          {/* Google Button */}
+          <button
+            onClick={handleLogin}
+            className="btn btn-lg btn-danger w-100 d-flex align-items-center justify-content-center gap-3 shadow-sm"
+            style={{ fontWeight: "500" }}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm" role="status"></span>
+                Signing in...
+              </>
+            ) : (
+              <>
+                <img
+                  src="https://www.google.com/favicon.ico"
+                  alt="Google"
+                  width="22"
+                  height="22"
+                />
+                Sign in with Google
+              </>
+            )}
+          </button>
+
+          {/* Footer Text */}
+          <p className="mt-4 text-muted small">
+            Only for Niels Brock students • Free & secure
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Login;
