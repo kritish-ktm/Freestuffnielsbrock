@@ -1,0 +1,37 @@
+// src/pages/AuthCallback.js
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+function AuthCallback() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      const fullName = user.user_metadata?.full_name;
+      const section = user.user_metadata?.section;
+
+      if (fullName && section) {
+        // Profile complete, go home
+        navigate("/", { replace: true });
+      } else {
+        // New user, go to onboarding
+        navigate("/onboarding", { replace: true });
+      }
+    }
+  }, [user, loading, navigate]);
+
+  return (
+    <div className="min-vh-100 d-flex align-items-center justify-content-center">
+      <div className="text-center">
+        <div className="spinner-border text-primary mb-3" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="text-muted">Completing login...</p>
+      </div>
+    </div>
+  );
+}
+
+export default AuthCallback;

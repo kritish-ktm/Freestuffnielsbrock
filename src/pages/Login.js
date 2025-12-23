@@ -1,14 +1,29 @@
 // src/pages/Login.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabase";
 
 function Login() {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // If user is already logged in, redirect
+  useEffect(() => {
+    if (user && !authLoading) {
+      const fullName = user.user_metadata?.full_name;
+      const section = user.user_metadata?.section;
+
+      if (fullName && section) {
+        // Profile complete, go home
+        navigate("/", { replace: true });
+      } else {
+        // New user, go to onboarding
+        navigate("/onboarding", { replace: true });
+      }
+    }
+  }, [user, authLoading, navigate]);
 
   const handleLogin = async () => {
     try {
@@ -16,40 +31,25 @@ function Login() {
       setError("");
 
       // Sign in with Google
+      // This will redirect to /auth/callback after Google auth
       await signInWithGoogle();
-
-      // Wait a moment for the user to be set
-      setTimeout(async () => {
-        try {
-          // Get the current user
-          const { data: { user } } = await supabase.auth.getUser();
-
-          if (user) {
-            // Check if user has completed profile
-            const fullName = user.user_metadata?.full_name;
-            const section = user.user_metadata?.section;
-
-            if (fullName && section) {
-              // Profile already completed, go to home
-              navigate("/", { replace: true });
-            } else {
-              // New user, go to onboarding
-              navigate("/onboarding", { replace: true });
-            }
-          }
-        } catch (err) {
-          console.error("Error checking user:", err);
-          // If there's an error checking, redirect to onboarding to be safe
-          navigate("/onboarding", { replace: true });
-        }
-      }, 1000);
     } catch (loginError) {
       console.error("Login failed:", loginError);
       setError("Login failed. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
+
+  // Show loading state if auth is loading
+  if (authLoading) {
+    return (
+      <div className="min-vh-100 d-flex align-items-center justify-content-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center bg-gradient-primary">

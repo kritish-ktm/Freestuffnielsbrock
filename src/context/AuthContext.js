@@ -6,44 +6,74 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Load session on mount
   useEffect(() => {
     const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user ?? null);
+      try {
+        const { data } = await supabase.auth.getSession();
+        setUser(data.session?.user ?? null);
+      } catch (error) {
+        console.error("Error getting session:", error);
+      } finally {
+        setLoading(false);
+      }
     };
+
     getSession();
 
+    // Listen for auth changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => {
-      listener.subscription.unsubscribe();
+      listener?.subscription.unsubscribe();
     };
   }, []);
 
   // Google login
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin },
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
 
-    if (error) console.error("Google login error:", error.message);
+      if (error) {
+        console.error("Google login error:", error.message);
+        throw error;
+      }
+    } catch (error) {
+      console.error("Sign in error:", error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, signInWithGoogle, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
+};
