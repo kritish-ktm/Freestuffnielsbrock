@@ -1,479 +1,126 @@
+// src/pages/Login.js
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../supabase";
+import { useNavigate } from "react-router-dom";
 
-function Profile() {
-  const { user } = useAuth();
+function Login() {
+  const { signInWithGoogle, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
-  
-  const [formData, setFormData] = useState({
-    full_name: "",
-    section: "",
-    intake_month: "",
-    phone_number: "",
-    dob: "",
-    campus_id: "",
-    course: "",
-  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
+  // If user is already logged in, redirect
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
+    if (user && !authLoading) {
+      const fullName = user.user_metadata?.full_name;
+      const section = user.user_metadata?.section;
 
-    const loadProfile = async () => {
-      try {
-        setLoading(true);
-        
-        // Get user metadata from auth
-        const fullName = user.user_metadata?.full_name || "";
-        const section = user.user_metadata?.section || "";
-        const intakeMonth = user.user_metadata?.intake_month || "";
-
-        setFormData({
-          full_name: fullName,
-          section: section,
-          intake_month: intakeMonth,
-          phone_number: user.user_metadata?.phone_number || "",
-          dob: user.user_metadata?.dob || "",
-          campus_id: user.user_metadata?.campus_id || "",
-          course: user.user_metadata?.course || "",
-        });
-      } catch (error) {
-        console.error("Error loading profile:", error);
-        setMessage("Error loading profile");
-        setMessageType("danger");
-      } finally {
-        setLoading(false);
+      if (fullName && section) {
+        // Profile complete, go home
+        navigate("/", { replace: true });
+      } else {
+        // New user, go to onboarding
+        navigate("/onboarding", { replace: true });
       }
-    };
-
-    loadProfile();
-  }, [user, navigate]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.full_name.trim()) {
-      setMessage("⚠️ Please enter your full name");
-      setMessageType("danger");
-      return;
     }
+  }, [user, authLoading, navigate]);
 
-    if (!formData.section.trim()) {
-      setMessage("⚠️ Please select your section");
-      setMessageType("danger");
-      return;
-    }
-
-    if (!formData.intake_month) {
-      setMessage("⚠️ Please select your intake month");
-      setMessageType("danger");
-      return;
-    }
-
-    setSaving(true);
+  const handleLogin = async () => {
     try {
-      // Update user metadata
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: formData.full_name.trim(),
-          section: formData.section.trim(),
-          intake_month: formData.intake_month,
-          phone_number: formData.phone_number.trim(),
-          dob: formData.dob,
-          campus_id: formData.campus_id.trim(),
-          course: formData.course.trim(),
-        }
-      });
+      setLoading(true);
+      setError("");
 
-      if (error) throw error;
-
-      setMessage("✅ Profile updated successfully!");
-      setMessageType("success");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      setMessage("❌ Error updating profile: " + error.message);
-      setMessageType("danger");
-    } finally {
-      setSaving(false);
+      // Sign in with Google
+      // This will redirect to /auth/callback after Google auth
+      await signInWithGoogle();
+    } catch (loginError) {
+      console.error("Login failed:", loginError);
+      setError("Login failed. Please try again.");
+      setLoading(false);
     }
   };
 
-  if (loading) {
+  // Show loading state if auth is loading
+  if (authLoading) {
     return (
-      <div className="container my-5 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+      <div className="min-vh-100 d-flex align-items-center justify-content-center">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3 text-muted">Checking authentication...</p>
         </div>
-        <p className="mt-3">Loading profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="container my-5">
-      <div className="mb-4">
-        <button 
-          className="btn btn-link text-decoration-none" 
-          onClick={() => navigate(-1)}
-          style={{ color: "#003087" }}
-        >
-          <i className="bi bi-arrow-left me-2"></i>
-          Back
-        </button>
-      </div>
+    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-gradient-primary">
+      <div className="card shadow-lg border-0 rounded-lg" style={{ maxWidth: "420px", width: "100%" }}>
+        <div className="card-body p-5 text-center">
 
-      <div className="row g-4">
-        {/* Profile Card Display */}
-        <div className="col-lg-4">
-          <div className="card shadow-lg border-0 sticky-top" style={{ top: "20px" }}>
-            <div className="card-body p-4">
-              {/* Profile Header */}
-              <div className="text-center mb-4">
-                <div 
-                  className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
-                  style={{
-                    width: "100px",
-                    height: "100px",
-                    backgroundColor: "#003087",
-                    color: "white",
-                    fontSize: "2.5rem"
-                  }}
-                >
-                  <i className="bi bi-person-fill"></i>
-                </div>
-                <h4 className="fw-bold mb-1" style={{ color: "#003087" }}>
-                  {formData.full_name || "No Name"}
-                </h4>
-                <p className="text-muted mb-0">{formData.section || "No Section"}</p>
-              </div>
+          {/* Custom Logo */}
+          <img
+            src="/logo192.png"
+            alt="Free Stuff Niels Brock"
+            className="mb-4"
+            height="100"
+            style={{ objectFit: "contain" }}
+          />
 
-              <hr />
+          {/* Title */}
+          <h1 className="h3 fw-bold text-primary mb-2">
+            Free Stuff Niels Brock
+          </h1>
+          <p className="text-muted mb-4">
+            Login with your student Google account
+          </p>
 
-              {/* Profile Details */}
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-envelope-fill me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Email</small>
-                </div>
-                <p className="mb-0 ms-4">{user?.email || "N/A"}</p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-calendar-event me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Intake Month</small>
-                </div>
-                <p className="mb-0 ms-4">{formData.intake_month || "Not specified"}</p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-telephone-fill me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Phone</small>
-                </div>
-                <p className="mb-0 ms-4">{formData.phone_number || "Not specified"}</p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-cake2 me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Date of Birth</small>
-                </div>
-                <p className="mb-0 ms-4">
-                  {formData.dob 
-                    ? new Date(formData.dob).toLocaleDateString('en-GB', { 
-                        day: 'numeric', 
-                        month: 'long', 
-                        year: 'numeric' 
-                      })
-                    : "Not specified"}
-                </p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-card-text me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Student ID</small>
-                </div>
-                <p className="mb-0 ms-4">{formData.campus_id || "Not specified"}</p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-mortarboard-fill me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Course</small>
-                </div>
-                <p className="mb-0 ms-4">{formData.course || "Not specified"}</p>
-              </div>
-
-              {/* Profile Completion */}
-              <hr />
-              <div className="mt-3">
-                <small className="text-muted">Profile Completion</small>
-                <div className="progress mt-2" style={{ height: "8px" }}>
-                  <div 
-                    className="progress-bar bg-success" 
-                    role="progressbar" 
-                    style={{ 
-                      width: `${
-                        (Object.values(formData).filter(val => val && val.trim()).length / 
-                        Object.keys(formData).length) * 100
-                      }%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
+          {/* Error Message */}
+          {error && (
+            <div className="alert alert-danger alert-dismissible fade show" role="alert">
+              {error}
+              <button 
+                type="button" 
+                className="btn-close" 
+                onClick={() => setError("")}
+              ></button>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Edit Form */}
-        <div className="col-lg-8">
-          <div className="card shadow-lg border-0">
-            <div className="card-body p-5">
-              <h2 className="fw-bold mb-1" style={{ color: "#003087" }}>
-                <i className="bi bi-pencil-square me-2"></i>
-                Edit Profile
-              </h2>
-              <p className="text-muted mb-4">Update your profile information</p>
+          {/* Google Button */}
+          <button
+            onClick={handleLogin}
+            className="btn btn-lg btn-danger w-100 d-flex align-items-center justify-content-center gap-3 shadow-sm"
+            style={{ fontWeight: "500" }}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm" role="status"></span>
+                Signing in...
+              </>
+            ) : (
+              <>
+                <img
+                  src="https://www.google.com/favicon.ico"
+                  alt="Google"
+                  width="22"
+                  height="22"
+                />
+                Sign in with Google
+              </>
+            )}
+          </button>
 
-              {message && (
-                <div className={`alert alert-${messageType} alert-dismissible fade show`} role="alert">
-                  {message}
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={() => setMessage("")}
-                  ></button>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                {/* Email (Read-only) */}
-                <div className="mb-4">
-                  <label className="form-label fw-bold">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    value={user?.email || ""}
-                    disabled
-                  />
-                  <small className="text-muted">
-                    Your email cannot be changed
-                  </small>
-                </div>
-
-                {/* Full Name */}
-                <div className="mb-4">
-                  <label htmlFor="full_name" className="form-label fw-bold">
-                    Full Name <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="full_name"
-                    name="full_name"
-                    className="form-control form-control-lg"
-                    value={formData.full_name}
-                    onChange={handleChange}
-                    placeholder="e.g. John Doe"
-                    required
-                    disabled={saving}
-                  />
-                  <small className="text-muted">
-                    This is how other students will see you
-                  </small>
-                </div>
-
-                {/* Section */}
-                <div className="mb-4">
-                  <label htmlFor="section" className="form-label fw-bold">
-                    Section <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="section"
-                    name="section"
-                    className="form-control form-control-lg"
-                    value={formData.section}
-                    onChange={handleChange}
-                    placeholder="e.g. Section E"
-                    required
-                    disabled={saving}
-                  />
-                  <small className="text-muted">
-                    Which section are you in?
-                  </small>
-                </div>
-
-                {/* Intake Month */}
-                <div className="mb-4">
-                  <label htmlFor="intake_month" className="form-label fw-bold">
-                    Intake Month <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    id="intake_month"
-                    name="intake_month"
-                    className="form-select form-select-lg"
-                    value={formData.intake_month}
-                    onChange={handleChange}
-                    required
-                    disabled={saving}
-                  >
-                    <option value="">-- Select Intake Month --</option>
-                    <option value="January">January</option>
-                    <option value="February">February</option>
-                    <option value="March">March</option>
-                    <option value="April">April</option>
-                    <option value="May">May</option>
-                    <option value="June">June</option>
-                    <option value="July">July</option>
-                    <option value="August">August</option>
-                    <option value="September">September</option>
-                    <option value="October">October</option>
-                    <option value="November">November</option>
-                    <option value="December">December</option>
-                  </select>
-                  <small className="text-muted">
-                    When did you start at Niels Brock?
-                  </small>
-                </div>
-
-                {/* Phone Number */}
-                <div className="mb-4">
-                  <label htmlFor="phone_number" className="form-label fw-bold">
-                    Phone Number <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone_number"
-                    name="phone_number"
-                    className="form-control form-control-lg"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                    placeholder="e.g. +45 40 40 40 40"
-                    required
-                    disabled={saving}
-                  />
-                  <small className="text-muted">For verification purposes</small>
-                </div>
-
-                {/* Date of Birth */}
-                <div className="mb-4">
-                  <label htmlFor="dob" className="form-label fw-bold">
-                    Date of Birth <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    id="dob"
-                    name="dob"
-                    className="form-control form-control-lg"
-                    value={formData.dob}
-                    onChange={handleChange}
-                    required
-                    disabled={saving}
-                  />
-                </div>
-
-                {/* Campus ID */}
-                <div className="mb-4">
-                  <label htmlFor="campus_id" className="form-label fw-bold">
-                    Student ID <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="campus_id"
-                    name="campus_id"
-                    className="form-control form-control-lg"
-                    value={formData.campus_id}
-                    onChange={handleChange}
-                    placeholder="e.g. NB123456"
-                    required
-                    disabled={saving}
-                  />
-                </div>
-
-                {/* Course */}
-                <div className="mb-4">
-                  <label htmlFor="course" className="form-label fw-bold">
-                    Course / Program <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="course"
-                    name="course"
-                    className="form-control form-control-lg"
-                    value={formData.course}
-                    onChange={handleChange}
-                    placeholder="e.g. Business Administration"
-                    required
-                    disabled={saving}
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  className="btn btn-success btn-lg w-100 fw-bold"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-check-circle me-2"></i>
-                      Save Changes
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Profile Info Box */}
-              <div className="mt-5 p-3 bg-light rounded">
-                <h6 className="fw-bold mb-3" style={{ color: "#003087" }}>
-                  <i className="bi bi-info-circle me-2"></i>
-                  Why we collect this information
-                </h6>
-                <ul className="text-muted small mb-0">
-                  <li><strong>Full Name:</strong> So other students know who you are</li>
-                  <li><strong>Section:</strong> To help build community within your section</li>
-                  <li><strong>Intake Month:</strong> To connect you with students in your cohort</li>
-                </ul>
-              </div>
-
-              {/* Privacy Notice */}
-              <div className="mt-3 p-3 bg-info bg-opacity-10 rounded border border-info">
-                <small className="text-muted">
-                  <i className="bi bi-shield-check me-2" style={{ color: "#003087" }}></i>
-                  <strong>Privacy:</strong> Your profile information is only visible to other logged-in users for safety and security purposes.
-                </small>
-              </div>
-            </div>
-          </div>
+          {/* Footer Text */}
+          <p className="mt-4 text-muted small">
+            Only for Niels Brock students • Free & secure
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-export default Profile;
+export default Login;
