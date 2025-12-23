@@ -36,32 +36,27 @@ export const AuthProvider = ({ children }) => {
 
   // Google login
   const signInWithGoogle = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
+  try {
+    const redirectUrl = import.meta.env.MODE === 'production'
+      ? 'https://freestuffnb.com/auth/callback'
+      : 'http://localhost:5173/auth/callback'; // Vite default port
 
-      if (error) {
-        console.error("Google login error:", error.message);
-        throw error;
-      }
-    } catch (error) {
-      console.error("Sign in error:", error);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: redirectUrl,
+      },
+    });
+
+    if (error) {
+      console.error("Google login error:", error.message);
       throw error;
     }
-  };
-
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-    } catch (error) {
-      console.error("Sign out error:", error);
-    }
-  };
+  } catch (error) {
+    console.error("Sign in error:", error);
+    throw error;
+  }
+};
 
   return (
     <AuthContext.Provider value={{ user, signInWithGoogle, signOut, loading }}>
