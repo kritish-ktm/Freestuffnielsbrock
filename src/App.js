@@ -18,6 +18,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminItems from "./pages/AdminItems";
 import AdminReports from "./pages/AdminReports";
+import AuthCallback from "./pages/AuthCallback";
+import AdminAnalytics from "./pages/AdminAnalytics";  
 
 function App() {
   return (
@@ -40,7 +42,10 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminUsers />} /> 
         <Route path="/admin/items" element={<AdminItems />} />
-        <Route path="/admin/reports" element={<AdminReports />} />    
+        <Route path="/admin/reports" element={<AdminReports />} />  
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />  
+        <Route path="/auth/callback" element={<Login />} />  
+
       </Routes>
     </>
   );
