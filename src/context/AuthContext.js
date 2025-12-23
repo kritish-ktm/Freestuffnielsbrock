@@ -10,14 +10,20 @@ export const AuthProvider = ({ children }) => {
 
   // Load session on mount
   useEffect(() => {
+    let mounted = true;
+
     const getSession = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        setUser(data.session?.user ?? null);
+        if (mounted) {
+          setUser(data.session?.user ?? null);
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error getting session:", error);
-      } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -25,11 +31,14 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for auth changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (mounted) {
+        setUser(session?.user ?? null);
+        // Don't set loading to false here - it's already false from getSession
+      }
     });
 
     return () => {
+      mounted = false;
       listener?.subscription.unsubscribe();
     };
   }, []);
