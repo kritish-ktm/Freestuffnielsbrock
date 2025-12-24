@@ -49,7 +49,7 @@ function Login() {
     <div 
       className="min-vh-100 d-flex align-items-center justify-content-center position-relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #003087 0%, #00A9E0 50%, #D4AF37 100%)",
+        background: "linear-gradient(135deg, #1a2332 0%, #2d4563 50%, #3d5a80 100%)",
       }}
     >
       {/* Animated Background Shapes */}
@@ -59,7 +59,7 @@ function Login() {
           style={{
             width: "300px",
             height: "300px",
-            background: "rgba(255, 255, 255, 0.1)",
+            background: "rgba(255, 255, 255, 0.05)",
             top: "-100px",
             left: "-100px",
             animation: "float 6s ease-in-out infinite"
@@ -70,7 +70,7 @@ function Login() {
           style={{
             width: "200px",
             height: "200px",
-            background: "rgba(255, 255, 255, 0.1)",
+            background: "rgba(255, 255, 255, 0.05)",
             bottom: "-50px",
             right: "-50px",
             animation: "float 8s ease-in-out infinite"
@@ -81,7 +81,7 @@ function Login() {
           style={{
             width: "150px",
             height: "150px",
-            background: "rgba(255, 255, 255, 0.1)",
+            background: "rgba(255, 255, 255, 0.05)",
             top: "50%",
             right: "10%",
             animation: "float 7s ease-in-out infinite"
@@ -95,39 +95,33 @@ function Login() {
           maxWidth: "450px", 
           width: "90%",
           zIndex: 1,
-          backdropFilter: "blur(10px)",
-          background: "rgba(255, 255, 255, 0.95)"
+          background: "white"
         }}
       >
         <div className="card-body p-5 text-center">
 
-          {/* Animated Logo Container */}
+          {/* Logo Container */}
           <div 
             className="mb-4 mx-auto d-flex align-items-center justify-content-center rounded-circle"
             style={{
-              width: "120px",
-              height: "120px",
-              background: "linear-gradient(135deg, #003087 0%, #00A9E0 100%)",
-              animation: "pulse 2s ease-in-out infinite"
+              width: "100px",
+              height: "100px",
+              background: "linear-gradient(135deg, #003087 0%, #005fa3 100%)",
+              boxShadow: "0 4px 15px rgba(0, 48, 135, 0.2)"
             }}
           >
             <img
               src="/logo192.png"
               alt="Free Stuff Niels Brock"
-              height="80"
+              height="65"
               style={{ objectFit: "contain" }}
             />
           </div>
 
-          {/* Title with Animation */}
+          {/* Title */}
           <h1 
             className="h2 fw-bold mb-2"
-            style={{ 
-              background: "linear-gradient(135deg, #003087 0%, #00A9E0 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text"
-            }}
+            style={{ color: "#003087" }}
           >
             Free Stuff Niels Brock
           </h1>
@@ -147,16 +141,16 @@ function Login() {
             </div>
           )}
 
-          {/* Google Button with Hover Effect */}
+          {/* Google Button */}
           <button
             onClick={handleLogin}
-            className="btn btn-lg w-100 d-flex align-items-center justify-content-center gap-3 shadow-lg mb-4 google-btn"
+            className="btn btn-lg w-100 d-flex align-items-center justify-content-center gap-3 shadow-sm mb-4 google-btn"
             style={{ 
               fontWeight: "600",
               padding: "15px",
-              background: "linear-gradient(135deg, #EA4335 0%, #FBBC05 50%, #34A853 100%)",
-              border: "none",
-              color: "white",
+              background: "white",
+              border: "2px solid #e0e0e0",
+              color: "#333",
               borderRadius: "12px",
               transition: "all 0.3s ease"
             }}
@@ -164,8 +158,8 @@ function Login() {
           >
             {loading ? (
               <>
-                <span className="spinner-border spinner-border-sm" role="status"></span>
-                Signing in...
+                <span className="spinner-border spinner-border-sm text-primary" role="status"></span>
+                <span style={{ color: "#666" }}>Signing in...</span>
               </>
             ) : (
               <>
@@ -174,7 +168,6 @@ function Login() {
                   alt="Google"
                   width="24"
                   height="24"
-                  style={{ filter: "brightness(0) invert(1)" }}
                 />
                 Sign in with Google
               </>
@@ -182,30 +175,30 @@ function Login() {
           </button>
 
           {/* Features Section */}
-          <div className="mt-4 p-3 rounded-3" style={{ background: "rgba(0, 48, 135, 0.05)" }}>
+          <div className="mt-4 p-3 rounded-3" style={{ background: "#f8f9fa" }}>
             <div className="row g-3 text-start">
               <div className="col-6">
                 <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-shield-check text-success" style={{ fontSize: "1.5rem" }}></i>
-                  <small className="fw-semibold">Secure</small>
+                  <i className="bi bi-shield-check" style={{ fontSize: "1.5rem", color: "#28a745" }}></i>
+                  <small className="fw-semibold text-muted">Secure</small>
                 </div>
               </div>
               <div className="col-6">
                 <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-lightning-charge text-warning" style={{ fontSize: "1.5rem" }}></i>
-                  <small className="fw-semibold">Fast</small>
+                  <i className="bi bi-lightning-charge" style={{ fontSize: "1.5rem", color: "#ffc107" }}></i>
+                  <small className="fw-semibold text-muted">Fast</small>
                 </div>
               </div>
               <div className="col-6">
                 <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-people text-primary" style={{ fontSize: "1.5rem" }}></i>
-                  <small className="fw-semibold">Community</small>
+                  <i className="bi bi-people" style={{ fontSize: "1.5rem", color: "#003087" }}></i>
+                  <small className="fw-semibold text-muted">Community</small>
                 </div>
               </div>
               <div className="col-6">
                 <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-cash-coin text-success" style={{ fontSize: "1.5rem" }}></i>
-                  <small className="fw-semibold">Free</small>
+                  <i className="bi bi-cash-coin" style={{ fontSize: "1.5rem", color: "#28a745" }}></i>
+                  <small className="fw-semibold text-muted">Free</small>
                 </div>
               </div>
             </div>
@@ -230,24 +223,14 @@ function Login() {
           }
         }
 
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(0, 169, 224, 0.7);
-          }
-          50% {
-            transform: scale(1.05);
-            box-shadow: 0 0 0 10px rgba(0, 169, 224, 0);
-          }
-        }
-
         .google-btn:hover {
-          transform: translateY(-3px) scale(1.02);
-          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3) !important;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+          border-color: #003087;
         }
 
         .google-btn:active {
-          transform: translateY(-1px) scale(0.98);
+          transform: translateY(0px);
         }
       `}</style>
     </div>
