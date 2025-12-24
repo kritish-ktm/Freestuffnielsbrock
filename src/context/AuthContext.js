@@ -79,6 +79,58 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Email/Password Sign Up
+  const signUpWithEmail = async (email, password, userData) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData, // Store user metadata like full_name, section, etc.
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Sign up error:", error);
+      throw error;
+    }
+  };
+
+  // Email/Password Sign In
+  const signInWithEmail = async (email, password) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Sign in error:", error);
+      throw error;
+    }
+  };
+
+  // Magic Link Sign In
+  const signInWithMagicLink = async (email) => {
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Magic link error:", error);
+      throw error;
+    }
+  };
+
   // Sign out
   const signOut = async () => {
     console.log("Signing out...");
@@ -101,7 +153,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, signInWithGoogle, signOut, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      signInWithGoogle, 
+      signInWithEmail, 
+      signUpWithEmail, 
+      signInWithMagicLink, 
+      signOut, 
+      loading 
+    }}>
       {children}
     </AuthContext.Provider>
   );
