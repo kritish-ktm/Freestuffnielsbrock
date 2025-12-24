@@ -13,6 +13,7 @@ import MyRequests from "./pages/MyRequests";
 import About from "./pages/About";
 import Onboarding from "./pages/Onboarding";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
@@ -38,6 +39,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/onboarding" element={<Onboarding />} /> 
         <Route path="/profile" element={<Profile />} />
+        <Route path="/user/:userId" element={<UserProfile />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminUsers />} /> 
@@ -45,7 +47,6 @@ function App() {
         <Route path="/admin/reports" element={<AdminReports />} />  
         <Route path="/admin/analytics" element={<AdminAnalytics />} />  
         <Route path="/auth/callback" element={<AuthCallback />} />  
-
       </Routes>
     </>
   );
