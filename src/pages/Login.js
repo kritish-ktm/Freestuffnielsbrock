@@ -11,7 +11,8 @@ function Login() {
 
   // If user is already logged in, redirect
   useEffect(() => {
-    if (user && !authLoading) {
+    // Only redirect if we're not in loading state and user exists
+    if (!authLoading && user) {
       const fullName = user.user_metadata?.full_name;
       const section = user.user_metadata?.section;
 
@@ -31,7 +32,6 @@ function Login() {
       setError("");
 
       // Sign in with Google
-      // This will redirect to /auth/callback after Google auth
       await signInWithGoogle();
     } catch (loginError) {
       console.error("Login failed:", loginError);
@@ -40,7 +40,7 @@ function Login() {
     }
   };
 
-  // Show loading state if auth is loading
+  // Show loading ONLY if authLoading is true
   if (authLoading) {
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center">
@@ -52,6 +52,11 @@ function Login() {
         </div>
       </div>
     );
+  }
+
+  // Only show login page if no user
+  if (user) {
+    return null; // Will redirect via useEffect
   }
 
   return (
