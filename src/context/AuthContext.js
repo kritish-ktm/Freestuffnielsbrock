@@ -14,7 +14,12 @@ export const AuthProvider = ({ children }) => {
 
     const getSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error:", error);
+        }
+        
         if (mounted) {
           setUser(data.session?.user ?? null);
           setLoading(false);
@@ -22,6 +27,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error("Error getting session:", error);
         if (mounted) {
+          setUser(null);
           setLoading(false);
         }
       }
@@ -30,26 +36,31 @@ export const AuthProvider = ({ children }) => {
     getSession();
 
     // Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email);
+      
       if (mounted) {
         setUser(session?.user ?? null);
-        // Don't set loading to false here - it's already false from getSession
+        
+        // Make sure loading is false after any auth change
+        if (loading) {
+          setLoading(false);
+        }
       }
     });
 
     return () => {
       mounted = false;
-      listener?.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
   // Google login
   const signInWithGoogle = async () => {
     try {
-      // Use window.location.origin to get the current domain dynamically
       const redirectUrl = `${window.location.origin}/auth/callback`;
       
-      console.log("Redirect URL:", redirectUrl); // Debug log
+      console.log("Redirect URL:", redirectUrl);
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -71,10 +82,26 @@ export const AuthProvider = ({ children }) => {
   // Sign out
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log("Signing out...");
+      setLoading(true);
+      
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Sign out error:", error);
+        throw error;
+      }
+      
+      // Force clear user state immediately
       setUser(null);
+      setLoading(false);
+      
+      console.log("Signed out successfully");
     } catch (error) {
       console.error("Sign out error:", error);
+      // Even if there's an error, clear the user
+      setUser(null);
+      setLoading(false);
     }
   };
 
