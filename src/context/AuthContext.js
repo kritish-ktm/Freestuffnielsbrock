@@ -81,27 +81,22 @@ export const AuthProvider = ({ children }) => {
 
   // Sign out
   const signOut = async () => {
+    console.log("Signing out...");
+    
+    // Clear user immediately BEFORE calling signOut
+    setUser(null);
+    setLoading(false);
+    
     try {
-      console.log("Signing out...");
-      setLoading(true);
-      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error("Sign out error:", error);
-        throw error;
       }
-      
-      // Force clear user state immediately
-      setUser(null);
-      setLoading(false);
       
       console.log("Signed out successfully");
     } catch (error) {
       console.error("Sign out error:", error);
-      // Even if there's an error, clear the user
-      setUser(null);
-      setLoading(false);
     }
   };
 
