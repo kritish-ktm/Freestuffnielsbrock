@@ -19,7 +19,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminItems from "./pages/AdminItems";
 import AdminReports from "./pages/AdminReports";
-import AuthCallback from "./pages/AuthCallback.jsx";
+import AuthCallback from "./pages/AuthCallback";
 import AdminAnalytics from "./pages/AdminAnalytics";  
 
 function App() {
