@@ -21,6 +21,7 @@ import AdminItems from "./pages/AdminItems";
 import AdminReports from "./pages/AdminReports";
 import AuthCallback from "./pages/AuthCallback";
 import AdminAnalytics from "./pages/AdminAnalytics";  
+import Signup from "./pages/Signup";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
         <Route path="/admin/reports" element={<AdminReports />} />  
         <Route path="/admin/analytics" element={<AdminAnalytics />} />  
         <Route path="/auth/callback" element={<AuthCallback />} />  
+        <Route Path="/signup" element={<Signup />} />
       </Routes>
     </>
   );
