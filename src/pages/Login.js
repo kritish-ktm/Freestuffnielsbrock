@@ -11,11 +11,13 @@ function Login() {
 
   // If user is already logged in, redirect
   useEffect(() => {
-    // Only redirect if we're not in loading state and user exists
+    // Only redirect if auth is loaded AND user exists
     if (!authLoading && user) {
       const fullName = user.user_metadata?.full_name;
       const section = user.user_metadata?.section;
 
+      console.log("User exists in Login, redirecting...");
+      
       if (fullName && section) {
         // Profile complete, go home
         navigate("/", { replace: true });
@@ -23,6 +25,8 @@ function Login() {
         // New user, go to onboarding
         navigate("/onboarding", { replace: true });
       }
+    } else if (!authLoading && !user) {
+      console.log("No user, staying on login page");
     }
   }, [user, authLoading, navigate]);
 
@@ -40,8 +44,24 @@ function Login() {
     }
   };
 
-  // Show loading ONLY if authLoading is true
-  if (authLoading) {
+  // Show loading ONLY if authLoading is true AND we don't have a definitive answer yet
+  // Add a timeout safety mechanism
+  const [showLoginForm, setShowLoginForm] = React.useState(false);
+
+  React.useEffect(() => {
+    // After 2 seconds, force show the login form if still loading
+    const timeout = setTimeout(() => {
+      if (authLoading && !user) {
+        console.warn("Auth taking too long, forcing login form display");
+        setShowLoginForm(true);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+  }, [authLoading, user]);
+
+  // Show loading screen only if truly loading and not taking too long
+  if (authLoading && !showLoginForm) {
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center">
         <div className="text-center">
@@ -54,9 +74,18 @@ function Login() {
     );
   }
 
-  // Only show login page if no user
-  if (user) {
-    return null; // Will redirect via useEffect
+  // If user exists, wait for redirect (don't show form)
+  if (user && !authLoading) {
+    return (
+      <div className="min-vh-100 d-flex align-items-center justify-content-center">
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3 text-muted">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
