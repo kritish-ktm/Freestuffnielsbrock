@@ -8,10 +8,15 @@ function Navbar() {
 
   const handleLogout = async () => {
     try {
+      console.log("Logout clicked");
       await signOut();
-      navigate("/login");
+      console.log("Signout completed, navigating to login");
+      // Use replace instead of navigate to prevent back button issues
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
+      // Still navigate to login even if there's an error
+      navigate("/login", { replace: true });
     }
   };
 
@@ -109,11 +114,11 @@ function Navbar() {
                     </li>
                     <li><hr className="dropdown-divider" /></li>
                     <li>
-  <Link className="dropdown-item" to="/profile">
-    <i className="bi bi-gear me-2"></i>
-    My Profile
-  </Link>
-</li>
+                      <Link className="dropdown-item" to="/profile">
+                        <i className="bi bi-gear me-2"></i>
+                        My Profile
+                      </Link>
+                    </li>
                     <li>
                       <Link className="dropdown-item" to="/products">
                         <i className="bi bi-grid me-2"></i>
