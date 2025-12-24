@@ -48,7 +48,7 @@ function App() {
         <Route path="/admin/reports" element={<AdminReports />} />  
         <Route path="/admin/analytics" element={<AdminAnalytics />} />  
         <Route path="/auth/callback" element={<AuthCallback />} />  
-        <Route Path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<Signup />} />
       </Routes>
     </>
   );
