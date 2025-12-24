@@ -181,11 +181,25 @@ function ProductDetails() {
             )}
 
             {product.posted_by_name && (
-              <div className="d-flex align-items-center mb-3 text-muted">
-                <i className="bi bi-person-circle me-2"></i>
-                <strong>Posted by:</strong> {product.posted_by_name}
-              </div>
-            )}
+  <p className="text-muted small mb-2">
+    <i className="bi bi-person-circle me-1"></i>
+    {product.posted_by === user?.id ? (
+      // If it's the current user's item, just show the name
+      <span>{product.posted_by_name}</span>
+    ) : (
+      // If it's someone else's item, make it clickable
+      <Link 
+        to={`/user/${product.posted_by}`}
+        className="text-decoration-none"
+        style={{ color: "#003087", fontWeight: "500" }}
+        onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
+        onMouseLeave={(e) => e.target.style.textDecoration = "none"}
+      >
+        {product.posted_by_name}
+      </Link>
+    )}
+  </p>
+)}
 
             {product.created_at && (
               <small className="text-muted">
