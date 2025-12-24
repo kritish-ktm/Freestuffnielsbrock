@@ -208,11 +208,25 @@ color: "#ffffff",
                         </div>
 
                         {product.posted_by_name && (
-                          <p className="text-muted small mb-2">
-                            <i className="bi bi-person-circle me-1"></i>
-                            {product.posted_by_name}
-                          </p>
-                        )}
+  <p className="text-muted small mb-2">
+    <i className="bi bi-person-circle me-1"></i>
+    {product.posted_by === user?.id ? (
+      // If it's the current user's item, just show the name
+      <span>{product.posted_by_name}</span>
+    ) : (
+      // If it's someone else's item, make it clickable
+      <Link 
+        to={`/user/${product.posted_by}`}
+        className="text-decoration-none"
+        style={{ color: "#003087", fontWeight: "500" }}
+        onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
+        onMouseLeave={(e) => e.target.style.textDecoration = "none"}
+      >
+        {product.posted_by_name}
+      </Link>
+    )}
+  </p>
+)}
 
                         {product.location && (
                           <p className="text-muted small mb-3">
