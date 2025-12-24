@@ -1,13 +1,19 @@
 // src/pages/Login.js
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
-  const { signInWithGoogle, user, loading: authLoading } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signInWithMagicLink, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loginMethod, setLoginMethod] = useState("buttons"); // "buttons", "email", "magiclink"
+  
+  // Form states
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // If user is already logged in, redirect
   useEffect(() => {
@@ -23,24 +29,64 @@ function Login() {
     }
   }, [user, authLoading, navigate]);
 
-  const handleLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       setLoading(true);
       setError("");
       await signInWithGoogle();
     } catch (loginError) {
       console.error("Login failed:", loginError);
-      setError("Login failed. Please try again.");
+      setError("Google login failed. Please try again.");
       setLoading(false);
     }
   };
 
-  // Don't show anything while checking auth - just a simple check
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      await signInWithEmail(email, password);
+      // Will redirect via useEffect
+    } catch (loginError) {
+      console.error("Login failed:", loginError);
+      setError(loginError.message || "Login failed. Please check your credentials.");
+      setLoading(false);
+    }
+  };
+
+  const handleMagicLink = async (e) => {
+    e.preventDefault();
+    
+    if (!email) {
+      setError("Please enter your email");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      setSuccess("");
+      await signInWithMagicLink(email);
+      setSuccess("✅ Magic link sent! Check your email inbox.");
+      setLoading(false);
+    } catch (loginError) {
+      console.error("Magic link failed:", loginError);
+      setError("Failed to send magic link. Please try again.");
+      setLoading(false);
+    }
+  };
+
   if (authLoading) {
-    return null; // Return nothing while loading
+    return null;
   }
 
-  // Don't show login form if user exists (will redirect)
   if (user) {
     return null;
   }
@@ -76,17 +122,6 @@ function Login() {
             animation: "float 8s ease-in-out infinite"
           }}
         ></div>
-        <div 
-          className="position-absolute rounded-circle"
-          style={{
-            width: "150px",
-            height: "150px",
-            background: "rgba(255, 255, 255, 0.05)",
-            top: "50%",
-            right: "10%",
-            animation: "float 7s ease-in-out infinite"
-          }}
-        ></div>
       </div>
 
       <div 
@@ -98,7 +133,7 @@ function Login() {
           background: "white"
         }}
       >
-        <div className="card-body p-5 text-center">
+        <div className="card-body p-5">
 
           {/* Logo Container */}
           <div 
@@ -120,16 +155,16 @@ function Login() {
 
           {/* Title */}
           <h1 
-            className="h2 fw-bold mb-2"
+            className="h2 fw-bold mb-2 text-center"
             style={{ color: "#003087" }}
           >
-            Free Stuff Niels Brock
+            Welcome Back
           </h1>
-          <p className="text-muted mb-4">
-            🎓 Your campus marketplace for sharing and saving
+          <p className="text-muted mb-4 text-center">
+            Sign in to Free Stuff Niels Brock
           </p>
 
-          {/* Error Message */}
+          {/* Error/Success Messages */}
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
               {error}
@@ -141,71 +176,208 @@ function Login() {
             </div>
           )}
 
-          {/* Google Button */}
-          <button
-            onClick={handleLogin}
-            className="btn btn-lg w-100 d-flex align-items-center justify-content-center gap-3 shadow-sm mb-4 google-btn"
-            style={{ 
-              fontWeight: "600",
-              padding: "15px",
-              background: "white",
-              border: "2px solid #e0e0e0",
-              color: "#333",
-              borderRadius: "12px",
-              transition: "all 0.3s ease"
-            }}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm text-primary" role="status"></span>
-                <span style={{ color: "#666" }}>Signing in...</span>
-              </>
-            ) : (
-              <>
+          {success && (
+            <div className="alert alert-success alert-dismissible fade show" role="alert">
+              {success}
+              <button 
+                type="button" 
+                className="btn-close" 
+                onClick={() => setSuccess("")}
+              ></button>
+            </div>
+          )}
+
+          {/* Login Method Selection */}
+          {loginMethod === "buttons" && (
+            <>
+              {/* Google Button */}
+              <button
+                onClick={handleGoogleLogin}
+                className="btn btn-lg w-100 d-flex align-items-center justify-content-center gap-3 shadow-sm mb-3 google-btn"
+                style={{ 
+                  fontWeight: "600",
+                  padding: "15px",
+                  background: "white",
+                  border: "2px solid #e0e0e0",
+                  color: "#333",
+                  borderRadius: "12px",
+                  transition: "all 0.3s ease"
+                }}
+                disabled={loading}
+              >
                 <img
                   src="https://www.google.com/favicon.ico"
                   alt="Google"
                   width="24"
                   height="24"
                 />
-                Sign in with Google
-              </>
-            )}
-          </button>
+                Continue with Google
+              </button>
 
-          {/* Features Section */}
-          <div className="mt-4 p-3 rounded-3" style={{ background: "#f8f9fa" }}>
-            <div className="row g-3 text-start">
-              <div className="col-6">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-shield-check" style={{ fontSize: "1.5rem", color: "#28a745" }}></i>
-                  <small className="fw-semibold text-muted">Secure</small>
-                </div>
+              {/* Divider */}
+              <div className="d-flex align-items-center my-4">
+                <hr className="flex-grow-1" />
+                <span className="px-3 text-muted small">OR</span>
+                <hr className="flex-grow-1" />
               </div>
-              <div className="col-6">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-lightning-charge" style={{ fontSize: "1.5rem", color: "#ffc107" }}></i>
-                  <small className="fw-semibold text-muted">Fast</small>
-                </div>
-              </div>
-              <div className="col-6">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-people" style={{ fontSize: "1.5rem", color: "#003087" }}></i>
-                  <small className="fw-semibold text-muted">Community</small>
-                </div>
-              </div>
-              <div className="col-6">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-cash-coin" style={{ fontSize: "1.5rem", color: "#28a745" }}></i>
-                  <small className="fw-semibold text-muted">Free</small>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Footer Text */}
-          <p className="mt-4 mb-0 text-muted small">
+              {/* Email/Password Button */}
+              <button
+                onClick={() => setLoginMethod("email")}
+                className="btn btn-outline-primary btn-lg w-100 mb-2"
+                style={{ borderRadius: "12px", fontWeight: "600" }}
+              >
+                <i className="bi bi-envelope me-2"></i>
+                Sign in with Email
+              </button>
+
+              {/* Magic Link Button */}
+              <button
+                onClick={() => setLoginMethod("magiclink")}
+                className="btn btn-outline-secondary btn-lg w-100"
+                style={{ borderRadius: "12px", fontWeight: "600" }}
+              >
+                <i className="bi bi-magic me-2"></i>
+                Sign in with Magic Link
+              </button>
+
+              {/* Sign Up Link */}
+              <p className="text-center mt-4 mb-0">
+                <small className="text-muted">
+                  Don't have an account?{" "}
+                  <Link to="/signup" style={{ color: "#003087", fontWeight: "600" }}>
+                    Sign up
+                  </Link>
+                </small>
+              </p>
+            </>
+          )}
+
+          {/* Email/Password Form */}
+          {loginMethod === "email" && (
+            <>
+              <button
+                onClick={() => setLoginMethod("buttons")}
+                className="btn btn-link text-decoration-none mb-3 p-0"
+                style={{ color: "#003087" }}
+              >
+                <i className="bi bi-arrow-left me-2"></i>
+                Back to options
+              </button>
+
+              <form onSubmit={handleEmailLogin}>
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Email</label>
+                  <input
+                    type="email"
+                    className="form-control form-control-lg"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="form-label fw-semibold">Password</label>
+                  <input
+                    type="password"
+                    className="form-control form-control-lg"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-lg w-100"
+                  style={{ 
+                    borderRadius: "12px", 
+                    fontWeight: "600",
+                    backgroundColor: "#003087",
+                    border: "none"
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* Magic Link Form */}
+          {loginMethod === "magiclink" && (
+            <>
+              <button
+                onClick={() => setLoginMethod("buttons")}
+                className="btn btn-link text-decoration-none mb-3 p-0"
+                style={{ color: "#003087" }}
+              >
+                <i className="bi bi-arrow-left me-2"></i>
+                Back to options
+              </button>
+
+              <div className="alert alert-info" role="alert">
+                <small>
+                  <i className="bi bi-info-circle me-2"></i>
+                  We'll send you a magic link to sign in without a password!
+                </small>
+              </div>
+
+              <form onSubmit={handleMagicLink}>
+                <div className="mb-4">
+                  <label className="form-label fw-semibold">Email</label>
+                  <input
+                    type="email"
+                    className="form-control form-control-lg"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-lg w-100"
+                  style={{ 
+                    borderRadius: "12px", 
+                    fontWeight: "600",
+                    backgroundColor: "#003087",
+                    border: "none"
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-send me-2"></i>
+                      Send Magic Link
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* Footer */}
+          <p className="mt-4 mb-0 text-muted small text-center">
             <i className="bi bi-mortarboard-fill me-2" style={{ color: "#003087" }}></i>
             Only for Niels Brock students
           </p>
