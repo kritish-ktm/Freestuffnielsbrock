@@ -46,8 +46,10 @@ function Signup() {
       setLoading(true);
       await signUpWithEmail(formData.email, formData.password, {});
       
-      // Show success message
-      alert("✅ Account created! Please check your email to verify your account.");
+      // Show success message and inform about email verification
+      alert("✅ Account created! Please check your email to verify your account, then return to login.");
+      
+      // Redirect to login page where they can sign in after verification
       navigate("/login");
     } catch (signupError) {
       console.error("Signup failed:", signupError);
@@ -100,6 +102,14 @@ function Signup() {
           <p className="text-muted mb-4 text-center">
             Join the Niels Brock community
           </p>
+
+          {/* Info about next steps */}
+          <div className="alert alert-info mb-4" role="alert">
+            <small>
+              <i className="bi bi-info-circle me-2"></i>
+              After signup, verify your email and complete your profile to get started
+            </small>
+          </div>
 
           {/* Error Message */}
           {error && (
