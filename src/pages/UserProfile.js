@@ -34,50 +34,59 @@ function UserProfile() {
       setLoading(true);
       setError("");
 
-      // Get user's auth data to access metadata
-      const { data: { user: userData }, error: userError } = await supabase.auth.admin.getUserById(userId);
+      // Try to get profile from user_profiles table first
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-      if (userError) {
-        // If admin API doesn't work, try getting from items table
-        const { data: itemData, error: itemError } = await supabase
+      if (profileError) {
+        console.log("Profile not found in user_profiles, trying items table:", profileError);
+        
+        // Fallback: Get profile info from items table
+        const { data: items, error: itemsError } = await supabase
           .from('items')
-          .select('posted_by_name, posted_by_section, posted_by_email')
+          .select('*')
           .eq('posted_by', userId)
-          .limit(1)
-          .single();
+          .order('created_at', { ascending: false });
 
-        if (itemError || !itemData) {
-          setError("User not found");
+        if (itemsError) {
+          console.error("Error fetching items:", itemsError);
+          setError("Unable to load user profile");
           setLoading(false);
           return;
         }
 
-        // Construct user profile from item data
+        if (!items || items.length === 0) {
+          setError("User profile not found");
+          setLoading(false);
+          return;
+        }
+
+        // Get profile info from first item
+        const firstItem = items[0];
         setUserProfile({
-          full_name: itemData.posted_by_name || "Unknown User",
-          section: itemData.posted_by_section || "N/A",
-          email: itemData.posted_by_email || "",
-          course: "N/A" // Not available from items
+          full_name: firstItem.posted_by_name || "Unknown User",
+          section: firstItem.posted_by_section || "N/A",
+          email: firstItem.posted_by_email || "",
+          course: "N/A"
         });
+        setUserItems(items);
       } else {
-        // Use metadata from auth
-        setUserProfile({
-          full_name: userData.user_metadata?.full_name || "Unknown User",
-          section: userData.user_metadata?.section || "N/A",
-          email: userData.email || "",
-          course: userData.user_metadata?.course || "N/A"
-        });
-      }
+        // Profile found in user_profiles table
+        setUserProfile(profileData);
 
-      // Load user's posted items
-      const { data: items, error: itemsError } = await supabase
-        .from('items')
-        .select('*')
-        .eq('posted_by', userId)
-        .order('created_at', { ascending: false });
+        // Load user's posted items
+        const { data: items, error: itemsError } = await supabase
+          .from('items')
+          .select('*')
+          .eq('posted_by', userId)
+          .order('created_at', { ascending: false });
 
-      if (!itemsError) {
-        setUserItems(items || []);
+        if (!itemsError) {
+          setUserItems(items || []);
+        }
       }
 
     } catch (err) {
