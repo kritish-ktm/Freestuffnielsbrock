@@ -41,23 +41,23 @@ function UserProfile() {
         .eq('id', userId)
         .single();
 
+      // Load user's items regardless
+      const { data: items, error: itemsError } = await supabase
+        .from('items')
+        .select('*')
+        .eq('posted_by', userId)
+        .order('created_at', { ascending: false });
+
+      if (itemsError) {
+        console.error("Error fetching items:", itemsError);
+      }
+      
+      setUserItems(items || []);
+
       if (profileError) {
-        console.log("Profile not found in user_profiles, trying items table:", profileError);
+        console.log("Profile not found in user_profiles, using items data:", profileError);
         
         // Fallback: Get profile info from items table
-        const { data: items, error: itemsError } = await supabase
-          .from('items')
-          .select('*')
-          .eq('posted_by', userId)
-          .order('created_at', { ascending: false });
-
-        if (itemsError) {
-          console.error("Error fetching items:", itemsError);
-          setError("Unable to load user profile");
-          setLoading(false);
-          return;
-        }
-
         if (!items || items.length === 0) {
           setError("User profile not found");
           setLoading(false);
@@ -72,21 +72,14 @@ function UserProfile() {
           email: firstItem.posted_by_email || "",
           course: "N/A"
         });
-        setUserItems(items);
       } else {
         // Profile found in user_profiles table
-        setUserProfile(profileData);
-
-        // Load user's posted items
-        const { data: items, error: itemsError } = await supabase
-          .from('items')
-          .select('*')
-          .eq('posted_by', userId)
-          .order('created_at', { ascending: false });
-
-        if (!itemsError) {
-          setUserItems(items || []);
-        }
+        setUserProfile({
+          full_name: profileData.full_name || "Unknown User",
+          section: profileData.section || "N/A",
+          email: profileData.email || "",
+          course: profileData.course || "N/A"
+        });
       }
 
     } catch (err) {
