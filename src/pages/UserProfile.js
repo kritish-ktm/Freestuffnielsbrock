@@ -38,8 +38,8 @@ function UserProfile() {
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', userId)
-        .single();
+        .eq('user_id', userId)
+        .maybeSingle();
 
       // Load user's items regardless
       const { data: items, error: itemsError } = await supabase
@@ -78,7 +78,7 @@ function UserProfile() {
           full_name: profileData.full_name || "Unknown User",
           section: profileData.section || "N/A",
           email: profileData.email || "",
-          course: profileData.course || "N/A"
+          course: profileData.intake_month || "N/A"
         });
       }
 
