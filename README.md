@@ -1,70 +1,171 @@
-# Getting Started with Create React App
+Freestuff Niels Brock 🎓
+A student marketplace platform for Niels Brock Copenhagen Business College students to buy, sell, and trade items within the campus community.
+🌟 Features
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+User Authentication - Secure login and registration with Supabase
+Item Listings - Post items for sale or give away for free
+User Profiles - View profiles of sellers and their listings
+Categories - Browse items by category (Books, Electronics, Furniture, etc.)
+Search & Filter - Find exactly what you're looking for
+Responsive Design - Works seamlessly on desktop and mobile devices
 
-## Available Scripts
+🚀 Tech Stack
 
-In the project directory, you can run:
+Frontend: React.js with React Router
+Styling: Bootstrap 5 + Custom CSS
+Backend: Supabase (PostgreSQL database + Authentication)
+Hosting: [Your hosting platform]
 
-### `npm start`
+📋 Prerequisites
+Before you begin, ensure you have:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Node.js (v14 or higher)
+npm or yarn
+A Supabase account
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+🛠️ Installation
 
-### `npm test`
+Clone the repository
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+bash   git clone https://github.com/kritish-ktm/Freestuffnielsbrock.git
+   cd Freestuffnielsbrock
 
-### `npm run build`
+Install dependencies
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+bash   npm install
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Set up environment variables
+Create a .env file in the root directory:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+env   REACT_APP_SUPABASE_URL=your_supabase_url
+   REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-### `npm run eject`
+Set up Supabase Database
+Run these SQL commands in your Supabase SQL Editor:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+sql   -- Create user_profiles table
+   CREATE TABLE user_profiles (
+     id UUID REFERENCES auth.users PRIMARY KEY,
+     email TEXT,
+     full_name TEXT,
+     section TEXT,
+     course TEXT,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+   -- Create items table
+   CREATE TABLE items (
+     id SERIAL PRIMARY KEY,
+     name TEXT NOT NULL,
+     description TEXT,
+     price DECIMAL(10,2) DEFAULT 0,
+     category TEXT,
+     condition TEXT,
+     location TEXT,
+     image TEXT,
+     posted_by UUID REFERENCES auth.users,
+     posted_by_name TEXT,
+     posted_by_email TEXT,
+     posted_by_section TEXT,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+   -- Enable Row Level Security
+   ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE items ENABLE ROW LEVEL SECURITY;
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+   -- Policies for user_profiles
+   CREATE POLICY "Users can insert own profile" ON user_profiles
+     FOR INSERT TO authenticated
+     WITH CHECK (auth.uid() = id);
 
-## Learn More
+   CREATE POLICY "Users can update own profile" ON user_profiles
+     FOR UPDATE TO authenticated
+     USING (auth.uid() = id);
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+   CREATE POLICY "Anyone can view all profiles" ON user_profiles
+     FOR SELECT TO authenticated
+     USING (true);
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+   -- Policies for items
+   CREATE POLICY "Anyone can view items" ON items
+     FOR SELECT TO authenticated
+     USING (true);
 
-### Code Splitting
+   CREATE POLICY "Users can insert own items" ON items
+     FOR INSERT TO authenticated
+     WITH CHECK (auth.uid() = posted_by);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+   CREATE POLICY "Users can update own items" ON items
+     FOR UPDATE TO authenticated
+     USING (auth.uid() = posted_by);
 
-### Analyzing the Bundle Size
+   CREATE POLICY "Users can delete own items" ON items
+     FOR DELETE TO authenticated
+     USING (auth.uid() = posted_by);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+   -- Auto-create profile on signup
+   CREATE OR REPLACE FUNCTION public.handle_new_user()
+   RETURNS trigger AS $$
+   BEGIN
+     INSERT INTO public.user_profiles (id, email, full_name, section, course)
+     VALUES (
+       NEW.id,
+       NEW.email,
+       COALESCE(NEW.raw_user_meta_data->>'full_name', 'User'),
+       COALESCE(NEW.raw_user_meta_data->>'section', 'N/A'),
+       COALESCE(NEW.raw_user_meta_data->>'course', 'N/A')
+     );
+     RETURN NEW;
+   END;
+   $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-### Making a Progressive Web App
+   CREATE TRIGGER on_auth_user_created
+     AFTER INSERT ON auth.users
+     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Start the development server
 
-### Advanced Configuration
+bash   npm start
+The app will open at http://localhost:3000
+📁 Project Structure
+Freestuffnielsbrock/
+├── public/
+├── src/
+│   ├── components/      # Reusable components
+│   ├── context/         # React Context (Auth)
+│   ├── pages/          # Page components
+│   ├── supabase.js     # Supabase configuration
+│   ├── App.js          # Main app component
+│   └── index.js        # Entry point
+├── .env                # Environment variables (not in repo)
+├── .gitignore
+├── package.json
+└── README.md
+🔐 Environment Variables
+Required environment variables:
+VariableDescriptionREACT_APP_SUPABASE_URLYour Supabase project URLREACT_APP_SUPABASE_ANON_KEYYour Supabase anonymous key
+🤝 Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Fork the repository
+Create a feature branch (git checkout -b feature/AmazingFeature)
+Commit your changes (git commit -m 'Add some AmazingFeature')
+Push to the branch (git push origin feature/AmazingFeature)
+Open a Pull Request
 
-### Deployment
+📝 License
+This project is open source and available under the MIT License.
+👥 Authors
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Kritish - GitHub
 
-### `npm run build` fails to minify
+🙏 Acknowledgments
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Niels Brock Copenhagen Business College
+Supabase for backend infrastructure
+Bootstrap for UI components
+
+📞 Support
+If you have any questions or run into issues, please open an issue on GitHub.
+
+Made with ❤️ for Niels Brock students
