@@ -78,7 +78,7 @@ function UserProfile() {
           full_name: profileData.full_name || "Unknown User",
           section: profileData.section || "N/A",
           email: profileData.email || "",
-          course: profileData.intake_month || "N/A"
+          course: profileData.course || "N/A"
         });
       }
 
