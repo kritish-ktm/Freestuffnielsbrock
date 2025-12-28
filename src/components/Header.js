@@ -1,99 +1,181 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 function Header() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    let width = canvas.width = canvas.offsetWidth;
+    let height = canvas.height = canvas.offsetHeight;
+
+    const NUM_DOTS = 80;
+    const dots = [];
+
+
+ // Initialize particles (professional small white dots)
+for (let i = 0; i < NUM_DOTS; i++) {
+  dots.push({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    radius: 1 + Math.random() * 2, // even smaller for subtlety
+    angle: Math.random() * Math.PI * 2,
+    speed: 0.2 + Math.random() * 0.8, // slower, smoother motion
+    jaggedness: 0.5 + Math.random() * 0.5, // very subtle jagged edges
+  });
+}
+
+
+
+    function drawDot(dot) {
+  ctx.beginPath();
+  const spikes = 6 + Math.floor(Math.random() * 3);
+  const step = (Math.PI * 2) / spikes;
+  for (let i = 0; i < spikes; i++) {
+    const r = dot.radius + (Math.random() * dot.jaggedness - dot.jaggedness / 2);
+    const x = dot.x + r * Math.cos(i * step);
+    const y = dot.y + r * Math.sin(i * step);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.9)"; // true white
+  ctx.fill();
+}
+
+
+    let animationId;
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      dots.forEach(dot => {
+        drawDot(dot);
+
+        dot.x += Math.cos(dot.angle) * dot.speed;
+        dot.y += Math.sin(dot.angle) * dot.speed;
+        dot.angle += (Math.random() - 0.5) * 0.1;
+
+        if (dot.x > width + dot.radius) dot.x = -dot.radius;
+        if (dot.x < -dot.radius) dot.x = width + dot.radius;
+        if (dot.y > height + dot.radius) dot.y = -dot.radius;
+        if (dot.y < -dot.radius) dot.y = height + dot.radius;
+      });
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    const handleResize = () => {
+      width = canvas.width = canvas.offsetWidth;
+      height = canvas.height = canvas.offsetHeight;
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   return (
     <header className="hero-section">
-      <div className="hero-overlay">
-        <div className="container text-center text-white py-5 position-relative">
-          {/* Floating Graphics */}
-          <div className="floating-graphics">
-            <div className="graphic-item graphic-phone">
-              <i className="bi bi-phone"></i>
-            </div>
-            <div className="graphic-item graphic-tablet">
-              <i className="bi bi-tablet"></i>
-            </div>
-            <div className="graphic-item graphic-shirt">
-              <i className="bi bi-bag"></i>
-            </div>
-            <div className="graphic-item graphic-backpack">
-              <i className="bi bi-backpack"></i>
-            </div>
-            <div className="graphic-item graphic-book">
-              <i className="bi bi-book"></i>
-            </div>
-            <div className="graphic-item graphic-laptop">
-              <i className="bi bi-laptop"></i>
-            </div>
-            <div className="graphic-item graphic-watch">
-              <i className="bi bi-watch"></i>
-            </div>
-            <div className="graphic-item graphic-camera">
-              <i className="bi bi-camera"></i>
-            </div>
-            <div className="graphic-item graphic-headphones">
-              <i className="bi bi-earbuds"></i>
-            </div>
-            <div className="graphic-item graphic-chair">
-              <i className="bi bi-door-closed"></i>
-            </div>
-            <div className="graphic-item graphic-cup">
-              <i className="bi bi-cup"></i>
-            </div>
-            <div className="graphic-item graphic-gamepad">
-              <i className="bi bi-joystick"></i>
-            </div>
-          </div>
+      <canvas ref={canvasRef} className="canvas-dots" />
 
+      {/* Floating Graphics Icons */}
+      <div className="floating-graphics">
+        <div className="graphic-item graphic-phone">
+          <i className="bi bi-phone"></i>
+        </div>
+        <div className="graphic-item graphic-tablet">
+          <i className="bi bi-tablet"></i>
+        </div>
+        <div className="graphic-item graphic-shirt">
+          <i className="bi bi-bag"></i>
+        </div>
+        <div className="graphic-item graphic-backpack">
+          <i className="bi bi-backpack"></i>
+        </div>
+        <div className="graphic-item graphic-book">
+          <i className="bi bi-book"></i>
+        </div>
+        <div className="graphic-item graphic-laptop">
+          <i className="bi bi-laptop"></i>
+        </div>
+        <div className="graphic-item graphic-watch">
+          <i className="bi bi-watch"></i>
+        </div>
+        <div className="graphic-item graphic-camera">
+          <i className="bi bi-camera"></i>
+        </div>
+        <div className="graphic-item graphic-headphones">
+          <i className="bi bi-earbuds"></i>
+        </div>
+        <div className="graphic-item graphic-chair">
+          <i className="bi bi-door-closed"></i>
+        </div>
+        <div className="graphic-item graphic-cup">
+          <i className="bi bi-cup"></i>
+        </div>
+        <div className="graphic-item graphic-gamepad">
+          <i className="bi bi-joystick"></i>
+        </div>
+      </div>
+
+      <div className="hero-overlay">
+        <div className="container text-center text-white py-5 position-relative" style={{ zIndex: 2 }}>
           <h1 className="display-3 fw-bold mb-3 position-relative">
             Free Stuff Marketplace
           </h1>
+
           <p className="lead mb-4 position-relative">
-            Give away items you don't need. Find treasures others are sharing. 
+            Give away items you don't need. Find treasures others are sharing.
             <br />
             100% free for Niels Brock students!
           </p>
-          <div className="d-flex gap-3 justify-content-center flex-wrap position-relative" style={{ zIndex: 2 }}>
+
+          <div className="d-flex gap-3 justify-content-center flex-wrap position-relative">
             <Link to="/products" className="btn btn-light btn-lg px-4">
               <i className="bi bi-shop me-2"></i>
               Browse Items
             </Link>
-            <Link to="/post" className="btn btn-success btn-lg px-4">
+            <Link to="/post" className="btn btn-success btn-lg px-3">
               <i className="bi bi-plus-circle me-2"></i>
               Post an Item
             </Link>
           </div>
         </div>
       </div>
-      
+
       <style jsx>{`
         .hero-section {
-          background: linear-gradient(135deg, #677bd4ff 0%, #291141ff 100%);
+          background: linear-gradient(135deg, #677 0%, #0b0f3b 100%);
           min-height: 500px;
           display: flex;
           align-items: center;
           position: relative;
           overflow: hidden;
         }
-        
+
         .hero-overlay {
           width: 100%;
           background: rgba(24, 21, 21, 0.2);
           padding: 60px 0;
           position: relative;
         }
-        
-        .hero-section h1 {
-          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-          z-index: 2;
+
+        .canvas-dots {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 0;
+          pointer-events: none;
         }
 
-        .hero-section p {
-          z-index: 2;
-        }
-
-        /* Floating Graphics */
+        /* Floating Graphics Icons */
         .floating-graphics {
           position: absolute;
           width: 100%;
@@ -101,13 +183,11 @@ function Header() {
           top: 0;
           left: 0;
           display: flex;
-          align-items: center;
-          justify-content: space-around;
-          padding: 0 20px;
-          z-index: 0;
           flex-wrap: wrap;
-          overflow: hidden;
+          justify-content: space-around;
+          align-items: center;
           pointer-events: none;
+          z-index: 1;
         }
 
         .graphic-item {
@@ -118,133 +198,40 @@ function Header() {
           justify-content: center;
           width: 120px;
           height: 120px;
-          animation: pulse-glow 4s ease-in-out infinite;
-          transition: all 0.3s ease;
           position: absolute;
-          will-change: opacity;
-        }
-
-        .graphic-phone {
-          top: 10%;
-          left: 5%;
-          animation: gentle-sway 5s ease-in-out infinite 0.9s;
-        }
-
-        .graphic-tablet {
-          top: 60%;
-          left: 8%;
           animation: gentle-sway 5s ease-in-out infinite;
+          transition: all 0.3s ease;
         }
 
-        .graphic-shirt {
-          top: 20%;
-          left: 25%;
-          animation: gentle-sway 5s ease-in-out infinite 0.5s;
-        }
-
-        .graphic-backpack {
-          top: 40%;
-          left: 0.01%;
-          animation: gentle-sway 5s ease-in-out infinite 0.7s;
-        }
-
-        .graphic-book {
-          top: 15%;
-          right: 25%;
-          animation: gentle-sway 5s ease-in-out infinite 1s;
-        }
-
-        .graphic-laptop {
-          top: 65%;
-          right: 20%;
-          animation: gentle-sway 5s ease-in-out infinite 0.3s;
-        }
-
-        .graphic-watch {
-          top: 5%;
-          right: 10%;
-          animation: gentle-sway 5s ease-in-out infinite  1.2s;
-        }
-
-        .graphic-camera {
-          top: 20%;
-          right: 1%;
-          animation: gentle-sway 5s ease-in-out infinite 0.5s;
-        }
-
-        .graphic-headphones {
-          top: 35%;
-          left: 15%;
-          animation: gentle-sway 5s ease-in-out infinite  0.6s;
-        }
-
-        .graphic-chair {
-          top: 50%;
-          left: 50%;
-          animation: gentle-sway 5s ease-in-out infinite 0.9s;
-        }
-
-        .graphic-cup {
-          top: 1%;
-          right: 50%;
-          animation: gentle-sway 5s ease-in-out infinite 0.8s;
-        }
-
-        .graphic-gamepad {
-          top: 55%;
-          right: 5%;
-          animation: gentle-sway 5s ease-in-out infinite 0.4s;
-        }
+        /* Example positions */
+        .graphic-phone { top: 10%; left: 5%; }
+        .graphic-tablet { top: 60%; left: 8%; }
+        .graphic-shirt { top: 20%; left: 25%; }
+        .graphic-backpack { top: 40%; left: 0.01%; }
+        .graphic-book { top: 15%; right: 25%; }
+        .graphic-laptop { top: 65%; right: 20%; }
+        .graphic-watch { top: 10%; right: 10%; }
+        .graphic-camera { top: 20%; right: 1%; }
+        .graphic-headphones { top: 35%; left: 15%; }
+        .graphic-chair { top: 65%; left: 40%; }
+        .graphic-cup { top: 10%; right: 50%; }
+        .graphic-gamepad { top: 55%; right: 5%; }
 
         .graphic-item:hover {
           color: rgba(255, 255, 255, 0.6);
-          transform: scale(1.25) !important;
+          transform: scale(1.25);
           filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
         }
 
-        @keyframes bounce-rotate {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-            opacity: 0.35;
-          }
-          50% {
-            transform: translateY(-20px) rotate(3deg);
-            opacity: 0.4;
-          }
-        }
-        
         @keyframes gentle-sway {
-          0%, 100% {
-            transform: rotateZ(-3deg);
-          }
-          50% {
-            transform: rotateZ(3deg);
-          }
+          0%, 100% { transform: rotateZ(-3deg); }
+          50% { transform: rotateZ(3deg); }
         }
-        
-        @keyframes pulse-glow {
-          0%, 100% {
-            opacity: 0.35;
-          }
-          50% {
-            opacity: 0.45;
-          }
-        }
-        
+
         @media (max-width: 768px) {
-          .hero-section {
-            min-height: 400px;
-          }
-
-          .hero-section h1 {
-            font-size: 2rem;
-          }
-
-          .graphic-item {
-            font-size: 2.5rem;
-            width: 60px;
-            height: 60px;
-          }
+          .hero-section { min-height: 400px; }
+          .hero-section h1 { font-size: 2rem; }
+          .graphic-item { font-size: 2.5rem; width: 60px; height: 60px; }
         }
       `}</style>
     </header>
