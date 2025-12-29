@@ -348,7 +348,109 @@ function Home() {
         </div>
       </section>
 
-     {/* Testimonials Section - Marquee Style */}
+    
+
+      {/* Categories Section */}
+      <section className="py-5">
+        <div className="container">
+          <h2 className="text-center mb-5" style={{ color: "#003087" }}>
+            Popular Categories
+          </h2>
+          <div className="row g-4">
+            {[
+              { name: "Books", icon: "bi-book", color: "#003087" },
+              { name: "Electronics", icon: "bi-laptop", color: "#00A9E0" },
+              { name: "Furniture", icon: "bi-house", color: "#003087" },
+              { name: "Clothing", icon: "bi-bag", color: "#00A9E0" },
+              { name: "Sports", icon: "bi-bicycle", color: "#003087" },
+              { name: "Accessories", icon: "bi-backpack", color: "#00A9E0" },
+            ].map((category) => (
+              <div key={category.name} className="col-md-2 col-sm-4 col-6">
+                <Link to="/products" className="text-decoration-none">
+                  <div className="card h-100 text-center shadow-sm category-card border-0">
+                    <div className="card-body">
+                      <i className={`bi ${category.icon}`} style={{ fontSize: "3rem", color: category.color }}></i>
+                      <h6 className="mt-3 mb-0" style={{ color: "#003087" }}>
+                        {category.name}
+                      </h6>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-5 bg-light">
+        <div className="container">
+          <div className="row text-center">
+            <div className="col-md-4 mb-4">
+              <h2 className="display-4 fw-bold" style={{ color: "#003087" }}>
+                {latestItems.length > 0 ? `${latestItems.length * 10}+` : '0'}
+              </h2>
+              <p className="text-muted">Items Shared</p>
+            </div>
+            <div className="col-md-4 mb-4">
+              <h2 className="display-4 fw-bold" style={{ color: "#00A9E0" }}>
+                50+
+              </h2>
+              <p className="text-muted">Active Students</p>
+            </div>
+            <div className="col-md-4 mb-4">
+              <h2 className="display-4 fw-bold" style={{ color: "#D4AF37" }}>
+                100%
+              </h2>
+              <p className="text-muted">Free to Use</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQs Section */}
+      <section className="py-5">
+        <div className="container" style={{ maxWidth: "800px" }}>
+          <h2 className="text-center mb-5" style={{ color: "#003087" }}>
+            Frequently Asked Questions
+          </h2>
+          
+          <div className="accordion" id="faqAccordion">
+            {faqs.map((faq, index) => (
+              <div key={index} className="accordion-item border-0 shadow-sm mb-3" style={{ borderRadius: "12px", overflow: "hidden" }}>
+                <h2 className="accordion-header">
+                  <button
+                    className={`accordion-button ${openFAQ === index ? '' : 'collapsed'}`}
+                    type="button"
+                    onClick={() => toggleFAQ(index)}
+                    style={{
+                      backgroundColor: openFAQ === index ? "#003087" : "white",
+                      color: openFAQ === index ? "white" : "#003087",
+                      fontWeight: "600",
+                      borderRadius: openFAQ === index ? "12px 12px 0 0" : "12px",
+                      transition: "all 0.3s ease"
+                    }}
+                  >
+                    {faq.question}
+                  </button>
+                </h2>
+                <div
+                  className={`accordion-collapse collapse ${openFAQ === index ? 'show' : ''}`}
+                  style={{
+                    transition: "height 0.3s ease"
+                  }}
+                >
+                  <div className="accordion-body" style={{ backgroundColor: "#f8f9fa" }}>
+                    {faq.answer}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section - Marquee Style */}
 <section className="py-5 bg-light overflow-hidden">
   <div className="container">
     <h2 className="text-center mb-5" style={{ color: "#003087" }}>
@@ -455,108 +557,6 @@ function Home() {
   </div>
 </section>
 
-
-      {/* Categories Section */}
-      <section className="py-5">
-        <div className="container">
-          <h2 className="text-center mb-5" style={{ color: "#003087" }}>
-            Popular Categories
-          </h2>
-          <div className="row g-4">
-            {[
-              { name: "Books", icon: "bi-book", color: "#003087" },
-              { name: "Electronics", icon: "bi-laptop", color: "#00A9E0" },
-              { name: "Furniture", icon: "bi-house", color: "#003087" },
-              { name: "Clothing", icon: "bi-bag", color: "#00A9E0" },
-              { name: "Sports", icon: "bi-bicycle", color: "#003087" },
-              { name: "Accessories", icon: "bi-backpack", color: "#00A9E0" },
-            ].map((category) => (
-              <div key={category.name} className="col-md-2 col-sm-4 col-6">
-                <Link to="/products" className="text-decoration-none">
-                  <div className="card h-100 text-center shadow-sm category-card border-0">
-                    <div className="card-body">
-                      <i className={`bi ${category.icon}`} style={{ fontSize: "3rem", color: category.color }}></i>
-                      <h6 className="mt-3 mb-0" style={{ color: "#003087" }}>
-                        {category.name}
-                      </h6>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-5 bg-light">
-        <div className="container">
-          <div className="row text-center">
-            <div className="col-md-4 mb-4">
-              <h2 className="display-4 fw-bold" style={{ color: "#003087" }}>
-                {latestItems.length > 0 ? `${latestItems.length * 10}+` : '0'}
-              </h2>
-              <p className="text-muted">Items Shared</p>
-            </div>
-            <div className="col-md-4 mb-4">
-              <h2 className="display-4 fw-bold" style={{ color: "#00A9E0" }}>
-                50+
-              </h2>
-              <p className="text-muted">Active Students</p>
-            </div>
-            <div className="col-md-4 mb-4">
-              <h2 className="display-4 fw-bold" style={{ color: "#D4AF37" }}>
-                100%
-              </h2>
-              <p className="text-muted">Free to Use</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQs Section */}
-      <section className="py-5">
-        <div className="container" style={{ maxWidth: "800px" }}>
-          <h2 className="text-center mb-5" style={{ color: "#003087" }}>
-            Frequently Asked Questions
-          </h2>
-          
-          <div className="accordion" id="faqAccordion">
-            {faqs.map((faq, index) => (
-              <div key={index} className="accordion-item border-0 shadow-sm mb-3" style={{ borderRadius: "12px", overflow: "hidden" }}>
-                <h2 className="accordion-header">
-                  <button
-                    className={`accordion-button ${openFAQ === index ? '' : 'collapsed'}`}
-                    type="button"
-                    onClick={() => toggleFAQ(index)}
-                    style={{
-                      backgroundColor: openFAQ === index ? "#003087" : "white",
-                      color: openFAQ === index ? "white" : "#003087",
-                      fontWeight: "600",
-                      borderRadius: openFAQ === index ? "12px 12px 0 0" : "12px",
-                      transition: "all 0.3s ease"
-                    }}
-                  >
-                    {faq.question}
-                  </button>
-                </h2>
-                <div
-                  className={`accordion-collapse collapse ${openFAQ === index ? 'show' : ''}`}
-                  style={{
-                    transition: "height 0.3s ease"
-                  }}
-                >
-                  <div className="accordion-body" style={{ backgroundColor: "#f8f9fa" }}>
-                    {faq.answer}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      
 
       {/* CTA Section */}
       <section
