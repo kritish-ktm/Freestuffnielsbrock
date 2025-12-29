@@ -10,8 +10,96 @@ function Home() {
   const { user } = useAuth();
   const [latestItems, setLatestItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [openFAQ, setOpenFAQ] = useState(null);
 
-  // Load last 6 items from Supabase
+  const testimonials = [
+    {
+      id: 1,
+      name: "Raman Sukhu",
+      section: "Section E",
+      course: "Computer Science",
+      feedback: "I found amazing textbooks for free! This platform saved me hundreds of kroner. Thank you!",
+      initials: "RS",
+      color: "#003087"
+    },
+    {
+      id: 2,
+      name: "Lok Bahadur Gharti Magar",
+      section: "Section C",
+      course: "Computer Science",
+      feedback: "Selling my old laptop was so easy. Connected with a buyer within hours. Highly recommend!",
+      initials: "LM",
+      color: "#00A9E0"
+    },
+    {
+      id: 3,
+      name: "Bibek Adhikari",
+      section: "Section B",
+      course: "Marketing",
+      feedback: "Great community! Everyone is friendly and responsive. Got furniture for my dorm room!",
+      initials: "BA",
+      color: "#D4AF37"
+    },
+    {
+      id: 4,
+      name: "Smita Shrestha",
+      section: "Section E",
+      course: "Computer Science",
+      feedback: "The best student marketplace! Fast, secure, and completely free. Love it!",
+      initials: "SS",
+      color: "#003087"
+    },
+    {
+      id: 5,
+      name: "Isabella Petersen",
+      section: "Section D",
+      course: "International Business",
+      feedback: "Posted my bike and sold it the same day! Super convenient for students.",
+      initials: "IP",
+      color: "#00A9E0"
+    },
+    {
+      id: 6,
+      name: "Md Samiul Haque",
+      section: "Section A",
+      course: "Economics",
+      feedback: "Found exactly what I needed for my studies. This platform is a game-changer!",
+      initials: "MH",
+      color: "#D4AF37"
+    }
+  ];
+
+  const faqs = [
+    {
+      question: "How do I post an item?",
+      answer: "Simply log in with your Niels Brock email, click on 'Post Item' in the navigation menu, fill in the details about your item (name, description, price, category, condition, location), upload a photo if you'd like, and submit! Your item will be visible to all students immediately."
+    },
+    {
+      question: "Is this platform free?",
+      answer: "Yes! Free Stuff Niels Brock is 100% free to use. There are no listing fees, no transaction fees, and no hidden costs. We're a student-led initiative created to help the Niels Brock community share and exchange items easily."
+    },
+    {
+      question: "Who can use this platform?",
+      answer: "This platform is exclusively for Niels Brock Copenhagen Business College students. You need a valid Niels Brock student email address (@niels-brock.dk or @student.niels-brock.dk) to sign up and access the platform."
+    },
+    {
+      question: "How do I contact a seller?",
+      answer: "Click on any item to view its details. On the product page, you'll find the seller's email address and contact information. You can reach out to them directly via email to arrange pickup, ask questions, or negotiate."
+    },
+    {
+      question: "Can I edit/delete my posts?",
+      answer: "Yes! You have full control over your listings. Go to your profile page to see all your posted items. From there, you can edit item details, update photos, mark items as sold, or delete listings that are no longer available."
+    },
+    {
+      question: "Is my data safe?",
+      answer: "Absolutely! We take your privacy seriously. Your data is encrypted and stored securely using Supabase, a trusted cloud database provider. We only collect essential information (name, email, section) and never share your data with third parties. We comply with GDPR regulations."
+    },
+    {
+      question: "How long do listings stay active?",
+      answer: "Listings remain active indefinitely until you delete them or mark them as sold. We recommend removing or updating your listings once an item is no longer available to keep the marketplace current and relevant for everyone."
+    }
+  ];
+
   useEffect(() => {
     fetchLatestItems();
   }, []);
@@ -36,7 +124,6 @@ function Home() {
     }
   };
 
-  // Handle delete
   const handleLiveDelete = async (id) => {
     if (!window.confirm('Delete this item?')) return;
 
@@ -56,11 +143,14 @@ function Home() {
     }
   };
 
-  // Generate placeholder image
   const getPlaceholderImage = (id) => {
     const colors = ['667eea', '764ba2', 'f093fb', '4facfe', 'fa709a', '43e97b'];
     const color = colors[id % colors.length];
     return `https://via.placeholder.com/300x200/${color}/ffffff?text=Item`;
+  };
+
+  const toggleFAQ = (index) => {
+    setOpenFAQ(openFAQ === index ? null : index);
   };
 
   return (
@@ -76,22 +166,21 @@ function Home() {
       <div className="alert alert-info text-center mb-0" role="alert" style={{ borderRadius: 0, backgroundColor: "#D4AF37", borderColor: "#D4AF37", color: "#fff" }}>
         💼 <strong>Coming Soon:</strong> Career Opportunities Platform - Connect with employers for internships, part-time positions, and job opportunities!
       </div>
-{/* Disclaimer Banner */}
-<div
-  className="alert alert-info text-center mb-0"
-  role="alert"
-  style={{
-    borderRadius: 0,
-    backgroundColor: "#2E7D32",
-borderColor: "#2E7D32",
-color: "#ffffff",
 
-    fontSize: "0.95rem",
-  }}
->
-  🎓 <strong>Student-Led Project:</strong> This platform is created by students for students and is not an official website or service of Niels Brock.
-</div>
-
+      {/* Disclaimer Banner */}
+      <div
+        className="alert alert-info text-center mb-0"
+        role="alert"
+        style={{
+          borderRadius: 0,
+          backgroundColor: "#2E7D32",
+          borderColor: "#2E7D32",
+          color: "#ffffff",
+          fontSize: "0.95rem",
+        }}
+      >
+        🎓 <strong>Student-Led Project:</strong> This platform is created by students for students and is not an official website or service of Niels Brock.
+      </div>
 
       {/* How It Works Section */}
       <section className="py-5 bg-light">
@@ -208,25 +297,23 @@ color: "#ffffff",
                         </div>
 
                         {product.posted_by_name && (
-  <p className="text-muted small mb-2">
-    <i className="bi bi-person-circle me-1"></i>
-    {product.posted_by === user?.id ? (
-      // If it's the current user's item, just show the name
-      <span>{product.posted_by_name}</span>
-    ) : (
-      // If it's someone else's item, make it clickable
-      <Link 
-        to={`/user/${product.posted_by}`}
-        className="text-decoration-none"
-        style={{ color: "#003087", fontWeight: "500" }}
-        onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
-        onMouseLeave={(e) => e.target.style.textDecoration = "none"}
-      >
-        {product.posted_by_name}
-      </Link>
-    )}
-  </p>
-)}
+                          <p className="text-muted small mb-2">
+                            <i className="bi bi-person-circle me-1"></i>
+                            {product.posted_by === user?.id ? (
+                              <span>{product.posted_by_name}</span>
+                            ) : (
+                              <Link 
+                                to={`/user/${product.posted_by}`}
+                                className="text-decoration-none"
+                                style={{ color: "#003087", fontWeight: "500" }}
+                                onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
+                                onMouseLeave={(e) => e.target.style.textDecoration = "none"}
+                              >
+                                {product.posted_by_name}
+                              </Link>
+                            )}
+                          </p>
+                        )}
 
                         {product.location && (
                           <p className="text-muted small mb-3">
@@ -261,8 +348,116 @@ color: "#ffffff",
         </div>
       </section>
 
+     {/* Testimonials Section - Marquee Style */}
+<section className="py-5 bg-light overflow-hidden">
+  <div className="container">
+    <h2 className="text-center mb-5" style={{ color: "#003087" }}>
+      What Students Say
+    </h2>
+  </div>
+
+  {/* Row 1: Right → Left */}
+  <div className="marquee-container">
+    <div className="marquee-content marquee-rtl">
+      {[...testimonials, ...testimonials].map((testimonial, index) => (
+        <div key={`${testimonial.id}-row1-${index}`} className="testimonial-card">
+          <div className="card shadow-sm border-0 h-100">
+            <div className="card-body p-4">
+              <div className="d-flex align-items-center mb-3">
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-3"
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    backgroundColor: testimonial.color,
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  {testimonial.initials}
+                </div>
+                <div>
+                  <h6 className="mb-0 fw-bold" style={{ color: "#003087" }}>
+                    {testimonial.name}
+                  </h6>
+                  <small className="text-muted">
+                    {testimonial.section} • {testimonial.course}
+                  </small>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <i
+                    key={star}
+                    className="bi bi-star-fill"
+                    style={{ color: "#FFD700", fontSize: "0.9rem" }}
+                  />
+                ))}
+              </div>
+
+              <p className="card-text text-muted mb-0" style={{ fontSize: "0.95rem" }}>
+                "{testimonial.feedback}"
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Row 2: Left → Right */}
+  <div className="marquee-container mt-4">
+    <div className="marquee-content marquee-ltr">
+      {[...testimonials, ...testimonials].map((testimonial, index) => (
+        <div key={`${testimonial.id}-row2-${index}`} className="testimonial-card">
+          <div className="card shadow-sm border-0 h-100">
+            <div className="card-body p-4">
+              <div className="d-flex align-items-center mb-3">
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-3"
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    backgroundColor: testimonial.color,
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  {testimonial.initials}
+                </div>
+                <div>
+                  <h6 className="mb-0 fw-bold" style={{ color: "#003087" }}>
+                    {testimonial.name}
+                  </h6>
+                  <small className="text-muted">
+                    {testimonial.section} • {testimonial.course}
+                  </small>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <i
+                    key={star}
+                    className="bi bi-star-fill"
+                    style={{ color: "#FFD700", fontSize: "0.9rem" }}
+                  />
+                ))}
+              </div>
+
+              <p className="card-text text-muted mb-0" style={{ fontSize: "0.95rem" }}>
+                "{testimonial.feedback}"
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+
       {/* Categories Section */}
-      <section className="py-5 bg-light">
+      <section className="py-5">
         <div className="container">
           <h2 className="text-center mb-5" style={{ color: "#003087" }}>
             Popular Categories
@@ -294,7 +489,7 @@ color: "#ffffff",
       </section>
 
       {/* Stats Section */}
-      <section className="py-5">
+      <section className="py-5 bg-light">
         <div className="container">
           <div className="row text-center">
             <div className="col-md-4 mb-4">
@@ -318,6 +513,50 @@ color: "#ffffff",
           </div>
         </div>
       </section>
+
+      {/* FAQs Section */}
+      <section className="py-5">
+        <div className="container" style={{ maxWidth: "800px" }}>
+          <h2 className="text-center mb-5" style={{ color: "#003087" }}>
+            Frequently Asked Questions
+          </h2>
+          
+          <div className="accordion" id="faqAccordion">
+            {faqs.map((faq, index) => (
+              <div key={index} className="accordion-item border-0 shadow-sm mb-3" style={{ borderRadius: "12px", overflow: "hidden" }}>
+                <h2 className="accordion-header">
+                  <button
+                    className={`accordion-button ${openFAQ === index ? '' : 'collapsed'}`}
+                    type="button"
+                    onClick={() => toggleFAQ(index)}
+                    style={{
+                      backgroundColor: openFAQ === index ? "#003087" : "white",
+                      color: openFAQ === index ? "white" : "#003087",
+                      fontWeight: "600",
+                      borderRadius: openFAQ === index ? "12px 12px 0 0" : "12px",
+                      transition: "all 0.3s ease"
+                    }}
+                  >
+                    {faq.question}
+                  </button>
+                </h2>
+                <div
+                  className={`accordion-collapse collapse ${openFAQ === index ? 'show' : ''}`}
+                  style={{
+                    transition: "height 0.3s ease"
+                  }}
+                >
+                  <div className="accordion-body" style={{ backgroundColor: "#f8f9fa" }}>
+                    {faq.answer}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      
 
       {/* CTA Section */}
       <section
@@ -367,6 +606,67 @@ color: "#ffffff",
       <Footer />
 
       <style jsx>{`
+        /* Marquee Testimonials */
+        .marquee-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+.marquee-content {
+  display: flex;
+  width: max-content;
+  gap: 1.5rem;
+}
+
+/* Row 1: Right → Left */
+.marquee-rtl {
+  animation: marquee-rtl 30s linear infinite;
+}
+
+/* Row 2: Left → Right */
+.marquee-ltr {
+  transform: translateX(-50%);
+  animation: marquee-ltr 30s linear infinite;
+}
+
+@keyframes marquee-rtl {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-ltr {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.testimonial-card {
+  min-width: 300px;
+}
+
+
+        /* Accordion Animations */
+        .accordion-button:not(.collapsed) {
+          box-shadow: none;
+        }
+        
+        .accordion-button:focus {
+          box-shadow: none;
+          border-color: transparent;
+        }
+        
+        .accordion-collapse {
+          transition: height 0.35s ease;
+        }
+
+        /* Category Cards */
         .category-card {
           transition: all 0.3s ease;
           border: none;
@@ -379,6 +679,7 @@ color: "#ffffff",
           box-shadow: 0 12px 25px rgba(0, 48, 135, 0.15) !important;
         }
 
+        /* Product Cards */
         .product-card {
           transition: transform 0.2s ease, box-shadow 0.2s ease;
           border: none;
