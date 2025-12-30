@@ -92,29 +92,64 @@ function Profile() {
                   />
                 </label>
 
-                <h6 className="fw-bold mt-2 mb-0">
-                  {formData.full_name || "Your Name"}
-                </h6>
-                <small className="text-muted">{user.email}</small>
+                <h6 className="fw-bold mt-2 mb-1">
+  {formData.full_name || "Local Guide"}
+</h6>
+<small className="text-muted d-block">
+  {user.email}
+</small>
+<small className="badge bg-light text-dark mt-2">
+  Student
+</small>
+
               </div>
 
               {/* NAV */}
-              <nav className="dashboard-nav">
-                {[
-                  ["basic", "Basic Info"],
-                  ["contact", "Contact"],
-                  ["student", "Student Info"],
-                  ["security", "Security"],
-                ].map(([key, label]) => (
-                  <button
-                    key={key}
-                    className={`nav-btn ${activeTab === key ? "active" : ""}`}
-                    onClick={() => setActiveTab(key)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </nav>
+              {/* Dashboard Tabs */}
+<div className="dashboard-tabs mb-4">
+  <button
+    className={`tab-btn ${activeTab === "basic" ? "active" : ""}`}
+    onClick={() => setActiveTab("basic")}
+  >
+    Basic Info
+  </button>
+
+  <button
+    className={`tab-btn ${activeTab === "contact" ? "active" : ""}`}
+    onClick={() => setActiveTab("contact")}
+  >
+    Contact
+  </button>
+
+  <button
+    className={`tab-btn ${activeTab === "student" ? "active" : ""}`}
+    onClick={() => setActiveTab("student")}
+  >
+    Student Info
+  </button>
+
+  <button
+    className={`tab-btn ${activeTab === "security" ? "active" : ""}`}
+    onClick={() => setActiveTab("security")}
+  >
+    Security
+  </button>
+
+  <div
+    className="tab-indicator"
+    style={{
+      transform:
+        activeTab === "basic"
+          ? "translateX(0%)"
+          : activeTab === "contact"
+          ? "translateX(100%)"
+          : activeTab === "student"
+          ? "translateX(200%)"
+          : "translateX(300%)",
+    }}
+  />
+</div>
+
 
             </div>
           </div>
@@ -124,20 +159,24 @@ function Profile() {
         <main className="col-lg-9">
 
           {/* MINI STATS */}
-          <div className="row g-3 mb-4">
-            <div className="col-sm-6 col-md-3">
-              <div className="stat-card">
-                <small>Profile</small>
-                <strong>Active</strong>
-              </div>
-            </div>
-            <div className="col-sm-6 col-md-3">
-              <div className="stat-card">
-                <small>Semester</small>
-                <strong>{formData.intake_month || "—"}</strong>
-              </div>
-            </div>
-          </div>
+         <div className="row g-3 mb-4">
+  <div className="col-sm-6 col-md-3">
+    <div className="stat-card">
+      <span className="stat-label">Profile</span>
+      <span className="stat-value">Active</span>
+    </div>
+  </div>
+
+  <div className="col-sm-6 col-md-3">
+    <div className="stat-card">
+      <span className="stat-label">Semester</span>
+      <span className="stat-value">
+        {formData.intake_month || "—"}
+      </span>
+    </div>
+  </div>
+</div>
+
 
           {/* CONTENT */}
           <div className="card border-0 shadow-sm">
@@ -248,6 +287,65 @@ function Profile() {
 
       {/* STYLES */}
       <style>{`
+      .dashboard-tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 0;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  position: relative;
+}
+
+.tab-btn.active {
+  color: #003087;
+}
+
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 25%;
+  height: 3px;
+  background: #003087;
+  border-radius: 2px;
+  transition: transform 0.3s ease;
+}
+
+    
+      .card-body > *+* {
+        margin-top: 8px;
+      }
+
+  .stat-card {
+  background: #f8f9fb;
+  padding: 14px 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
         .avatar-wrapper { cursor: pointer; }
         .avatar-img {
           width: 90px;
