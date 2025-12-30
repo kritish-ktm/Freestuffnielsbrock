@@ -56,28 +56,29 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Google login
-  const signInWithGoogle = async () => {
-    try {
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      
-      console.log("Redirect URL:", redirectUrl);
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
+  const signInWithGooglePopup = async () => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account'
         },
-      });
+        // Use popup instead of redirect
+        skipBrowserRedirect: false, // Keep as false for redirect
+        // OR set to true and handle popup manually
+      },
+    });
 
-      if (error) {
-        console.error("Google login error:", error.message);
-        throw error;
-      }
-    } catch (error) {
-      console.error("Sign in error:", error);
-      throw error;
-    }
-  };
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error during Google sign in:", error);
+    throw error;
+  }
+};
 
   // Email/Password Sign Up
   const signUpWithEmail = async (email, password, userData) => {
@@ -155,7 +156,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ 
       user, 
-      signInWithGoogle, 
+      signInWithGooglePopup, 
       signInWithEmail, 
       signUpWithEmail, 
       signInWithMagicLink, 

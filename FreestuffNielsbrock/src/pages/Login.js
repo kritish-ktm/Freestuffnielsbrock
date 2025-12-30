@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
-  const { signInWithGoogle, signInWithEmail, signInWithMagicLink, user, loading: authLoading } = useAuth();
+  const { signInWithGooglePopup, signInWithEmail, signInWithMagicLink, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +33,15 @@ function Login() {
     try {
       setLoading(true);
       setError("");
-      await signInWithGoogle();
+      // Pass options to force account selection
+      await signInWithGooglePopup({ 
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: {
+            prompt: 'select_account' // This forces Google to show account selection
+          }
+        }
+      });
     } catch (loginError) {
       console.error("Login failed:", loginError);
       setError("Google login failed. Please try again.");
@@ -213,6 +221,12 @@ function Login() {
                 />
                 Continue with Google
               </button>
+
+              {/* Helper text */}
+              <p className="text-center text-muted small mb-3">
+                <i className="bi bi-info-circle me-1"></i>
+                You'll be able to select your Google account
+              </p>
 
               {/* Divider */}
               <div className="d-flex align-items-center my-4">
