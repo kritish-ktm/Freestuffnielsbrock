@@ -63,23 +63,23 @@ function Navbar() {
         {/* Nav Links */}
         <div className="collapse navbar-collapse" id="navbarNav">
           {/* Search Bar */}
-          <form className="d-flex mx-auto my-2 my-lg-0" onSubmit={handleSearch} style={{ maxWidth: "400px", width: "100%" }}>
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ borderRight: "none" }}
-              />
-              <button 
-                className="btn btn-outline-secondary" 
-                type="submit"
-                style={{ borderLeft: "none", backgroundColor: "white" }}
-              >
-                <i className="bi bi-search"></i>
-              </button>
+          <form className="d-flex mx-auto my-2 my-lg-0" onSubmit={handleSearch} style={{ maxWidth: "300px", width: "70%" }}>
+            <div className="search-wrapper">
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control search-input"
+                  placeholder="Search items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button 
+                  className="btn search-button" 
+                  type="submit"
+                >
+                  <i className="bi bi-search"></i>
+                </button>
+              </div>
             </div>
           </form>
 
@@ -221,14 +221,96 @@ function Navbar() {
           transform: translateY(-1px);
         }
 
-        .input-group .form-control:focus {
-          border-color: #D4AF37;
-          box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+        /* Animated Google-style Search Bar */
+        .search-wrapper {
+          position: relative;
+          width: 100%;
         }
 
-        .input-group .btn:focus {
-          border-color: #D4AF37;
-          box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+        .search-wrapper::before {
+          content: '';
+          position: absolute;
+          top: -3px;
+          left: -3px;
+          right: -3px;
+          bottom: -3px;
+          background: linear-gradient(
+            45deg,
+            #4285f4,
+            #ea4335,
+            #fbbc04,
+            #34a853,
+            #4285f4
+          );
+          background-size: 400% 400%;
+          border-radius: 50px;
+          z-index: -1;
+          animation: gradientRotate 3s ease infinite;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .search-wrapper:hover::before,
+        .search-wrapper:focus-within::before {
+          opacity: 1;
+        }
+
+        @keyframes gradientRotate {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+
+        .search-input {
+          border: 3px solid #e0e0e0;
+          border-right: none;
+          border-radius: 50px 0 0 50px;
+          padding: 12px 20px;
+          font-size: 16px;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          background: white;
+        }
+
+        .search-input:focus {
+          outline: none;
+          border-color: #4285f4;
+          box-shadow: none;
+        }
+
+        .search-input::placeholder {
+          font-weight: 500;
+          color: #9e9e9e;
+        }
+
+        .search-button {
+          border: 3px solid #e0e0e0;
+          border-left: none;
+          border-radius: 0 50px 50px 0;
+          padding: 12px 24px;
+          background: white;
+          color: #5f6368;
+          transition: all 0.3s ease;
+          font-size: 18px;
+        }
+
+        .search-button:hover {
+          background: #f8f9fa;
+          color: #4285f4;
+          transform: none;
+        }
+
+        .search-wrapper:hover .search-input,
+        .search-wrapper:hover .search-button,
+        .search-wrapper:focus-within .search-input,
+        .search-wrapper:focus-within .search-button {
+          border-color: transparent;
         }
       `}</style>
     </nav>
