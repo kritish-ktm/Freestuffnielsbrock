@@ -6,13 +6,11 @@ import { supabase } from "../supabase";
 function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const [activeTab, setActiveTab] = useState("basic");
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-
-  const [avatarPreview, setAvatarPreview] = useState(null);
-
+  const [messageType, setMessageType] = useState("");
+  
   const [formData, setFormData] = useState({
     full_name: "",
     section: "",
@@ -23,375 +21,462 @@ function Profile() {
     course: "",
   });
 
-  /* ---------- LOAD PROFILE ---------- */
   useEffect(() => {
+    // Redirect to login if no user
     if (!user) {
       navigate("/login");
       return;
     }
 
-    setFormData({
-      full_name: user.user_metadata?.full_name || "",
-      section: user.user_metadata?.section || "",
-      intake_month: user.user_metadata?.intake_month || "",
-      phone_number: user.user_metadata?.phone_number || "",
-      dob: user.user_metadata?.dob || "",
-      campus_id: user.user_metadata?.campus_id || "",
-      course: user.user_metadata?.course || "",
-    });
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        
+        // Get user metadata from auth
+        const fullName = user.user_metadata?.full_name || "";
+        const section = user.user_metadata?.section || "";
+        const intakeMonth = user.user_metadata?.intake_month || "";
+
+        setFormData({
+          full_name: fullName,
+          section: section,
+          intake_month: intakeMonth,
+          phone_number: user.user_metadata?.phone_number || "",
+          dob: user.user_metadata?.dob || "",
+          campus_id: user.user_metadata?.campus_id || "",
+          course: user.user_metadata?.course || "",
+        });
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        setMessage("Error loading profile");
+        setMessageType("danger");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
   }, [user, navigate]);
 
-  /* ---------- HANDLERS ---------- */
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    setMessage("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    if (!formData.full_name.trim()) {
+      setMessage("⚠️ Please enter your full name");
+      setMessageType("danger");
+      return;
+    }
+
+    if (!formData.section.trim()) {
+      setMessage("⚠️ Please select your section");
+      setMessageType("danger");
+      return;
+    }
+
+    if (!formData.intake_month) {
+      setMessage("⚠️ Please select your intake month");
+      setMessageType("danger");
+      return;
+    }
+
+    setSaving(true);
     try {
+      // Update user metadata
       const { error } = await supabase.auth.updateUser({
-        data: formData,
+        data: {
+          full_name: formData.full_name.trim(),
+          section: formData.section.trim(),
+          intake_month: formData.intake_month,
+          phone_number: formData.phone_number.trim(),
+          dob: formData.dob,
+          campus_id: formData.campus_id.trim(),
+          course: formData.course.trim(),
+        }
       });
 
       if (error) throw error;
-      setMessage("Saved");
-    } catch (err) {
-      setMessage(err.message);
+
+      setMessage("✅ Profile updated successfully!");
+      setMessageType("success");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      setMessage("❌ Error updating profile: " + error.message);
+      setMessageType("danger");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAvatarPreview(URL.createObjectURL(file));
-    }
-  };
-
-  /* ---------- UI ---------- */
-  return (
-    <div className="container-fluid my-4">
-      <div className="row g-4">
-
-        {/* SIDEBAR (DESKTOP) */}
-        <aside className="col-lg-3 d-none d-lg-block">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
-
-              {/* AVATAR */}
-              <div className="text-center mb-4">
-                <label className="avatar-wrapper">
-                  <input type="file" hidden onChange={handleAvatarChange} />
-                  <img
-                    src={avatarPreview || "/avatar-placeholder.png"}
-                    alt="Avatar"
-                    className="avatar-img"
-                  />
-                </label>
-
-                <h6 className="fw-bold mt-2 mb-1">
-  {formData.full_name || "Local Guide"}
-</h6>
-<small className="text-muted d-block">
-  {user.email}
-</small>
-<small className="badge bg-light text-dark mt-2">
-  Student
-</small>
-
-              </div>
-
-              {/* NAV */}
-              {/* Dashboard Tabs */}
-<div className="dashboard-tabs mb-4">
-  <button
-    className={`tab-btn ${activeTab === "basic" ? "active" : ""}`}
-    onClick={() => setActiveTab("basic")}
-  >
-    Basic Info
-  </button>
-
-  <button
-    className={`tab-btn ${activeTab === "contact" ? "active" : ""}`}
-    onClick={() => setActiveTab("contact")}
-  >
-    Contact
-  </button>
-
-  <button
-    className={`tab-btn ${activeTab === "student" ? "active" : ""}`}
-    onClick={() => setActiveTab("student")}
-  >
-    Student Info
-  </button>
-
-  <button
-    className={`tab-btn ${activeTab === "security" ? "active" : ""}`}
-    onClick={() => setActiveTab("security")}
-  >
-    Security
-  </button>
-
-  <div
-    className="tab-indicator"
-    style={{
-      transform:
-        activeTab === "basic"
-          ? "translateX(0%)"
-          : activeTab === "contact"
-          ? "translateX(100%)"
-          : activeTab === "student"
-          ? "translateX(200%)"
-          : "translateX(300%)",
-    }}
-  />
-</div>
-
-
-            </div>
-          </div>
-        </aside>
-
-        {/* MAIN */}
-        <main className="col-lg-9">
-
-          {/* MINI STATS */}
-         <div className="row g-3 mb-4">
-  <div className="col-sm-6 col-md-3">
-    <div className="stat-card">
-      <span className="stat-label">Profile</span>
-      <span className="stat-value">Active</span>
-    </div>
-  </div>
-
-  <div className="col-sm-6 col-md-3">
-    <div className="stat-card">
-      <span className="stat-label">Semester</span>
-      <span className="stat-value">
-        {formData.intake_month || "—"}
-      </span>
-    </div>
-  </div>
-</div>
-
-
-          {/* CONTENT */}
-          <div className="card border-0 shadow-sm">
-            <div className="card-body p-4">
-
-              {/* BASIC INFO */}
-              {activeTab === "basic" && (
-                <>
-                  <h6 className="section-title">Basic Info</h6>
-                  <input
-                    className="form-control mb-3"
-                    name="full_name"
-                    placeholder="Full name"
-                    value={formData.full_name}
-                    onChange={handleChange}
-                  />
-                  <input
-                    className="form-control"
-                    name="dob"
-                    type="date"
-                    value={formData.dob}
-                    onChange={handleChange}
-                  />
-                </>
-              )}
-
-              {/* CONTACT */}
-              {activeTab === "contact" && (
-                <>
-                  <h6 className="section-title">Contact</h6>
-                  <input
-                    className="form-control mb-3"
-                    name="phone_number"
-                    placeholder="Phone number"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                  />
-                  <input
-                    className="form-control"
-                    value={user.email}
-                    disabled
-                  />
-                </>
-              )}
-
-              {/* STUDENT INFO */}
-              {activeTab === "student" && (
-                <>
-                  <h6 className="section-title">Student Info</h6>
-                  <input
-                    className="form-control mb-3"
-                    name="section"
-                    placeholder="Section"
-                    value={formData.section}
-                    onChange={handleChange}
-                  />
-                  <input
-                    className="form-control mb-3"
-                    name="campus_id"
-                    placeholder="Student ID"
-                    value={formData.campus_id}
-                    onChange={handleChange}
-                  />
-                  <input
-                    className="form-control"
-                    name="course"
-                    placeholder="Course"
-                    value={formData.course}
-                    onChange={handleChange}
-                  />
-                </>
-              )}
-
-              {/* SECURITY */}
-              {activeTab === "security" && (
-                <>
-                  <h6 className="section-title">Security</h6>
-                  <p className="text-muted small">
-                    Password changes are handled securely via email.
-                  </p>
-                  <button
-                    className="btn btn-outline-secondary"
-                    onClick={() =>
-                      supabase.auth.resetPasswordForEmail(user.email)
-                    }
-                  >
-                    Send password reset email
-                  </button>
-                </>
-              )}
-
-            </div>
-          </div>
-        </main>
+  if (loading) {
+    return (
+      <div className="container my-5 text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="mt-3">Loading profile...</p>
       </div>
+    );
+  }
 
-      {/* STICKY SAVE BAR */}
-      <div className="save-bar">
-        <span className="text-muted small">{message}</span>
-        <button
-          className="btn btn-primary"
-          onClick={handleSave}
-          disabled={saving}
+  return (
+    <div className="container my-5">
+      <div className="mb-4">
+        <button 
+          className="btn btn-link text-decoration-none" 
+          onClick={() => navigate(-1)}
+          style={{ color: "#003087" }}
         >
-          {saving ? "Saving…" : "Save changes"}
+          <i className="bi bi-arrow-left me-2"></i>
+          Back
         </button>
       </div>
 
-      {/* STYLES */}
-      <style>{`
-      .dashboard-tabs {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 24px;
-}
+      <div className="row g-4">
+        {/* Profile Card Display - Owner's View Only */}
+        <div className="col-lg-4">
+          <div className="card shadow-lg border-0 sticky-top" style={{ top: "20px" }}>
+            <div className="card-body p-4">
+              {/* Profile Header */}
+              <div className="text-center mb-4">
+                <div 
+                  className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                  style={{
+                    width: "100px",
+                    height: "100px",
+                    backgroundColor: "#003087",
+                    color: "white",
+                    fontSize: "2.5rem"
+                  }}
+                >
+                  <i className="bi bi-person-fill"></i>
+                </div>
+                <h4 className="fw-bold mb-1" style={{ color: "#003087" }}>
+                  {formData.full_name || "No Name"}
+                </h4>
+                <p className="text-muted mb-0">{formData.section || "No Section"}</p>
+                <span className="badge bg-success mt-2">
+                  <i className="bi bi-check-circle me-1"></i>
+                  Your Profile
+                </span>
+              </div>
 
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 12px 0;
-  font-weight: 600;
-  color: #6b7280;
-  cursor: pointer;
-  position: relative;
-}
+              <hr />
 
-.tab-btn.active {
-  color: #003087;
-}
+              {/* Profile Details */}
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-envelope-fill me-2" style={{ color: "#003087" }}></i>
+                  <small className="text-muted">Email</small>
+                </div>
+                <p className="mb-0 ms-4">{user?.email || "N/A"}</p>
+              </div>
 
-.tab-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 25%;
-  height: 3px;
-  background: #003087;
-  border-radius: 2px;
-  transition: transform 0.3s ease;
-}
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-calendar-event me-2" style={{ color: "#003087" }}></i>
+                  <small className="text-muted">Intake Month</small>
+                </div>
+                <p className="mb-0 ms-4">{formData.intake_month || "Not specified"}</p>
+              </div>
 
-    
-      .card-body > *+* {
-        margin-top: 8px;
-      }
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-telephone-fill me-2" style={{ color: "#003087" }}></i>
+                  <small className="text-muted">Phone</small>
+                </div>
+                <p className="mb-0 ms-4">{formData.phone_number || "Not specified"}</p>
+              </div>
 
-  .stat-card {
-  background: #f8f9fb;
-  padding: 14px 16px;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-cake2 me-2" style={{ color: "#003087" }}></i>
+                  <small className="text-muted">Date of Birth</small>
+                </div>
+                <p className="mb-0 ms-4">
+                  {formData.dob 
+                    ? new Date(formData.dob).toLocaleDateString('en-GB', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })
+                    : "Not specified"}
+                </p>
+              </div>
 
-.stat-label {
-  font-size: 12px;
-  color: #6c757d;
-  font-weight: 500;
-}
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-card-text me-2" style={{ color: "#003087" }}></i>
+                  <small className="text-muted">Student ID</small>
+                </div>
+                <p className="mb-0 ms-4">{formData.campus_id || "Not specified"}</p>
+              </div>
 
-.stat-value {
-  font-size: 16px;
-  font-weight: 700;
-  color: #111;
-}
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="bi bi-mortarboard-fill me-2" style={{ color: "#003087" }}></i>
+                  <small className="text-muted">Course</small>
+                </div>
+                <p className="mb-0 ms-4">{formData.course || "Not specified"}</p>
+              </div>
 
-        .avatar-wrapper { cursor: pointer; }
-        .avatar-img {
-          width: 90px;
-          height: 90px;
-          border-radius: 50%;
-          object-fit: cover;
-          background: #eee;
-        }
+              {/* Profile Completion */}
+              <hr />
+              <div className="mt-3">
+                <small className="text-muted">Profile Completion</small>
+                <div className="progress mt-2" style={{ height: "8px" }}>
+                  <div 
+                    className="progress-bar bg-success" 
+                    role="progressbar" 
+                    style={{ 
+                      width: `${
+                        (Object.values(formData).filter(val => val && val.trim()).length / 
+                        Object.keys(formData).length) * 100
+                      }%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        .dashboard-nav .nav-btn {
-          width: 100%;
-          text-align: left;
-          border: none;
-          background: none;
-          padding: 10px 12px;
-          border-radius: 6px;
-          margin-bottom: 4px;
-        }
-        .dashboard-nav .nav-btn.active {
-          background: #003087;
-          color: white;
-        }
+        {/* Edit Form */}
+        <div className="col-lg-8">
+          <div className="card shadow-lg border-0">
+            <div className="card-body p-5">
+              <h2 className="fw-bold mb-1" style={{ color: "#003087" }}>
+                <i className="bi bi-pencil-square me-2"></i>
+                Edit Profile
+              </h2>
+              <p className="text-muted mb-4">Update your profile information</p>
 
-        .stat-card {
-          background: #f8f9fb;
-          padding: 12px;
-          border-radius: 8px;
-        }
+              {message && (
+                <div className={`alert alert-${messageType} alert-dismissible fade show`} role="alert">
+                  {message}
+                  <button 
+                    type="button" 
+                    className="btn-close" 
+                    onClick={() => setMessage("")}
+                  ></button>
+                </div>
+              )}
 
-        .section-title {
-          font-weight: 600;
-          margin-bottom: 12px;
-        }
+              <form onSubmit={handleSubmit}>
+                {/* Email (Read-only) */}
+                <div className="mb-4">
+                  <label className="form-label fw-bold">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={user?.email || ""}
+                    disabled
+                  />
+                  <small className="text-muted">
+                    Your email cannot be changed
+                  </small>
+                </div>
 
-        .save-bar {
-          position: sticky;
-          bottom: 0;
-          background: white;
-          border-top: 1px solid #eee;
-          padding: 12px 20px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 20px;
-        }
-      `}</style>
+                {/* Full Name */}
+                <div className="mb-4">
+                  <label htmlFor="full_name" className="form-label fw-bold">
+                    Full Name <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="full_name"
+                    name="full_name"
+                    className="form-control form-control-lg"
+                    value={formData.full_name}
+                    onChange={handleChange}
+                    placeholder="e.g. John Doe"
+                    required
+                    disabled={saving}
+                  />
+                  <small className="text-muted">
+                    This is how other students will see you
+                  </small>
+                </div>
+
+                {/* Section */}
+                <div className="mb-4">
+                  <label htmlFor="section" className="form-label fw-bold">
+                    Section <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="section"
+                    name="section"
+                    className="form-control form-control-lg"
+                    value={formData.section}
+                    onChange={handleChange}
+                    placeholder="e.g. Section E"
+                    required
+                    disabled={saving}
+                  />
+                  <small className="text-muted">
+                    Which section are you in?
+                  </small>
+                </div>
+
+                {/* Intake Month */}
+                <div className="mb-4">
+                  <label htmlFor="intake_month" className="form-label fw-bold">
+                    Intake Month <span className="text-danger">*</span>
+                  </label>
+                  <select
+                    id="intake_month"
+                    name="intake_month"
+                    className="form-select form-select-lg"
+                    value={formData.intake_month}
+                    onChange={handleChange}
+                    required
+                    disabled={saving}
+                  >
+                    <option value="">-- Select Intake Month --</option>
+                    <option value="January">January</option>
+                    <option value="February">February</option>
+                    <option value="March">March</option>
+                    <option value="April">April</option>
+                    <option value="May">May</option>
+                    <option value="June">June</option>
+                    <option value="July">July</option>
+                    <option value="August">August</option>
+                    <option value="September">September</option>
+                    <option value="October">October</option>
+                    <option value="November">November</option>
+                    <option value="December">December</option>
+                  </select>
+                  <small className="text-muted">
+                    When did you start at Niels Brock?
+                  </small>
+                </div>
+
+                {/* Phone Number */}
+                <div className="mb-4">
+                  <label htmlFor="phone_number" className="form-label fw-bold">
+                    Phone Number <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone_number"
+                    name="phone_number"
+                    className="form-control form-control-lg"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                    placeholder="e.g. +45 40 40 40 40"
+                    required
+                    disabled={saving}
+                  />
+                  <small className="text-muted">For verification purposes</small>
+                </div>
+
+                {/* Date of Birth */}
+                <div className="mb-4">
+                  <label htmlFor="dob" className="form-label fw-bold">
+                    Date of Birth <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    id="dob"
+                    name="dob"
+                    className="form-control form-control-lg"
+                    value={formData.dob}
+                    onChange={handleChange}
+                    required
+                    disabled={saving}
+                  />
+                </div>
+
+                {/* Campus ID */}
+                <div className="mb-4">
+                  <label htmlFor="campus_id" className="form-label fw-bold">
+                    Student ID <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="campus_id"
+                    name="campus_id"
+                    className="form-control form-control-lg"
+                    value={formData.campus_id}
+                    onChange={handleChange}
+                    placeholder="e.g. NB123456"
+                    required
+                    disabled={saving}
+                  />
+                </div>
+
+                {/* Course */}
+                <div className="mb-4">
+                  <label htmlFor="course" className="form-label fw-bold">
+                    Course / Program <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="course"
+                    name="course"
+                    className="form-control form-control-lg"
+                    value={formData.course}
+                    onChange={handleChange}
+                    placeholder="e.g. Business Administration"
+                    required
+                    disabled={saving}
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="btn btn-success btn-lg w-100 fw-bold"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-circle me-2"></i>
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Profile Info Box */}
+              <div className="mt-5 p-3 bg-light rounded">
+                <h6 className="fw-bold mb-3" style={{ color: "#003087" }}>
+                  <i className="bi bi-info-circle me-2"></i>
+                  Why we collect this information
+                </h6>
+                <ul className="text-muted small mb-0">
+                  <li><strong>Full Name:</strong> So other students know who you are</li>
+                  <li><strong>Section:</strong> To help build community within your section</li>
+                  <li><strong>Intake Month:</strong> To connect you with students in your cohort</li>
+                </ul>
+              </div>
+
+              {/* Privacy Notice */}
+              <div className="mt-3 p-3 bg-info bg-opacity-10 rounded border border-info">
+                <small className="text-muted">
+                  <i className="bi bi-shield-check me-2" style={{ color: "#003087" }}></i>
+                  <strong>Privacy:</strong> Your profile information is only visible to other logged-in users for safety and security purposes.
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
