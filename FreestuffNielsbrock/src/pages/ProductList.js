@@ -1,6 +1,6 @@
 // src/pages/ProductList.js
 import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { supabase } from "../supabase";
@@ -8,10 +8,19 @@ import { supabase } from "../supabase";
 function ProductList() {
   const { user } = useAuth();
   const { removeFromInterested, isInterested } = useContext(CartContext);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+
+  // Get search query from URL on mount and when URL changes
+  useEffect(() => {
+    const urlSearch = searchParams.get("search");
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
 
   // Fetch items from Supabase
   useEffect(() => {
@@ -86,6 +95,13 @@ function ProductList() {
     }
   };
 
+  // Clear filters and URL params
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("All");
+    setSearchParams({}); // Clear URL search params
+  };
+
   // Generate placeholder image
   const getPlaceholderImage = (id) => {
     const colors = ['667eea', '764ba2', 'f093fb', '4facfe', 'fa709a', '43e97b'];
@@ -139,10 +155,7 @@ function ProductList() {
         <div className="col-md-2">
           <button
             className="btn btn-outline-secondary btn-lg w-100"
-            onClick={() => {
-              setSearchTerm("");
-              setSelectedCategory("All");
-            }}
+            onClick={handleClearFilters}
           >
             Clear
           </button>
@@ -206,25 +219,23 @@ function ProductList() {
                     </div>
 
                     {product.posted_by_name && (
-  <p className="text-muted small mb-2">
-    <i className="bi bi-person-circle me-1"></i>
-    {product.posted_by === user?.id ? (
-      // If it's the current user's item, just show the name
-      <span>{product.posted_by_name}</span>
-    ) : (
-      // If it's someone else's item, make it clickable
-      <Link 
-        to={`/user/${product.posted_by}`}
-        className="text-decoration-none"
-        style={{ color: "#003087", fontWeight: "500" }}
-        onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
-        onMouseLeave={(e) => e.target.style.textDecoration = "none"}
-      >
-        {product.posted_by_name}
-      </Link>
-    )}
-  </p>
-)}
+                      <p className="text-muted small mb-2">
+                        <i className="bi bi-person-circle me-1"></i>
+                        {product.posted_by === user?.id ? (
+                          <span>{product.posted_by_name}</span>
+                        ) : (
+                          <Link 
+                            to={`/user/${product.posted_by}`}
+                            className="text-decoration-none"
+                            style={{ color: "#003087", fontWeight: "500" }}
+                            onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
+                            onMouseLeave={(e) => e.target.style.textDecoration = "none"}
+                          >
+                            {product.posted_by_name}
+                          </Link>
+                        )}
+                      </p>
+                    )}
 
                     {product.location && (
                       <p className="text-muted small mb-3">

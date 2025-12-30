@@ -1,22 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleLogout = async () => {
     try {
       console.log("Logout clicked");
       await signOut();
       console.log("Signout completed, navigating to login");
-      // Use replace instead of navigate to prevent back button issues
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
-      // Still navigate to login even if there's an error
       navigate("/login", { replace: true });
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to products page with search query
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery(""); // Clear search after navigating
     }
   };
 
@@ -54,6 +62,27 @@ function Navbar() {
 
         {/* Nav Links */}
         <div className="collapse navbar-collapse" id="navbarNav">
+          {/* Search Bar */}
+          <form className="d-flex mx-auto my-2 my-lg-0" onSubmit={handleSearch} style={{ maxWidth: "400px", width: "100%" }}>
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ borderRight: "none" }}
+              />
+              <button 
+                className="btn btn-outline-secondary" 
+                type="submit"
+                style={{ borderLeft: "none", backgroundColor: "white" }}
+              >
+                <i className="bi bi-search"></i>
+              </button>
+            </div>
+          </form>
+
           <ul className="navbar-nav ms-auto align-items-center">
             <li className="nav-item">
               <Link className="nav-link fw-semibold" to="/">
@@ -190,6 +219,16 @@ function Navbar() {
         .btn:hover {
           opacity: 0.9;
           transform: translateY(-1px);
+        }
+
+        .input-group .form-control:focus {
+          border-color: #D4AF37;
+          box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+        }
+
+        .input-group .btn:focus {
+          border-color: #D4AF37;
+          box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
         }
       `}</style>
     </nav>
