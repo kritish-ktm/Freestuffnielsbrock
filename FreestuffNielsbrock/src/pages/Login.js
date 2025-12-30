@@ -5,6 +5,11 @@ import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
   const { signInWithGooglePopup, signInWithEmail, signInWithMagicLink, user, loading: authLoading } = useAuth();
+  const isInAppBrowser = () => {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  return /FBAN|FBAV|Instagram|Messenger/i.test(ua);
+};
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -14,6 +19,24 @@ function Login() {
   // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+if (isInAppBrowser()) {
+  return (
+    <div className="inapp-warning">
+      <p>🔐 Google Sign-in requires a secure browser.Try opening in your Web Browser i.e. Safari, Google Chrome, Firefox, Brave etc. Type Www.freestuffnb.com in search engine and you're ready to roll.</p>
+
+      <a
+        href={window.location.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="open-browser-btn"
+      >
+        Open in Browser
+      </a>
+    </div>
+  );
+}
+
 
   // If user is already logged in, redirect
   useEffect(() => {
