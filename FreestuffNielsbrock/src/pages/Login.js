@@ -20,22 +20,6 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-if (isInAppBrowser()) {
-  return (
-    <div className="inapp-warning">
-      <p>🔐 Google Sign-in requires a secure browser.Try opening in your Web Browser i.e. Safari, Google Chrome, Firefox, Brave etc. Type Www.freestuffnb.com in search engine and you're ready to roll.</p>
-
-      <a
-        href={window.location.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="open-browser-btn"
-      >
-        Open in Browser
-      </a>
-    </div>
-  );
-}
 
 
   // If user is already logged in, redirect
@@ -71,6 +55,23 @@ if (isInAppBrowser()) {
       setLoading(false);
     }
   };
+
+  if (isInAppBrowser()) {
+  return (
+    <div className="inapp-warning">
+      <p>🔐 Google Sign-in requires a secure browser.Try opening in your Web Browser i.e. Safari, Google Chrome, Firefox, Brave etc. Type Www.freestuffnb.com in search engine and you're ready to roll.</p>
+
+      <a
+        href={window.location.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="open-browser-btn"
+      >
+        Open in Browser
+      </a>
+    </div>
+  );
+}
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
