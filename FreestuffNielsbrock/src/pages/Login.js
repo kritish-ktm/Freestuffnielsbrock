@@ -5,24 +5,23 @@ import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
   const { signInWithGooglePopup, signInWithEmail, signInWithMagicLink, user, loading: authLoading } = useAuth();
+  
   const isInAppBrowser = () => {
-  const ua = navigator.userAgent || navigator.vendor || window.opera;
-  return /FBAN|FBAV|Instagram|Messenger/i.test(ua);
-};
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    // Enhanced detection
+    return /FBAN|FBAV|FB_IAB|Instagram|Messenger|Line|WhatsApp|Snapchat|Twitter|WeChat/i.test(ua) ||
+           (/(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(ua));
+  };
 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loginMethod, setLoginMethod] = useState("buttons"); // "buttons", "email", "magiclink"
+  const [loginMethod, setLoginMethod] = useState("buttons");
   
-  // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-
-
-  // If user is already logged in, redirect
   useEffect(() => {
     if (!authLoading && user) {
       const fullName = user.user_metadata?.full_name;
@@ -40,12 +39,11 @@ function Login() {
     try {
       setLoading(true);
       setError("");
-      // Pass options to force account selection
       await signInWithGooglePopup({ 
         options: {
           redirectTo: window.location.origin,
           queryParams: {
-            prompt: 'select_account' // This forces Google to show account selection
+            prompt: 'select_account'
           }
         }
       });
@@ -56,22 +54,82 @@ function Login() {
     }
   };
 
+  // Show WebView warning EARLY
   if (isInAppBrowser()) {
-  return (
-    <div className="inapp-warning">
-      <p>🔐 Google Sign-in requires a secure browser.Try opening in your Web Browser i.e. Safari, Google Chrome, Firefox, Brave etc. Type Www.freestuffnb.com in search engine and you're ready to roll.</p>
-
-      <a
-        href={window.location.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="open-browser-btn"
+    return (
+      <div 
+        className="min-vh-100 d-flex align-items-center justify-content-center"
+        style={{
+          background: "linear-gradient(135deg, #1a2332 0%, #2d4563 50%, #3d5a80 100%)",
+        }}
       >
-        Open in Browser
-      </a>
-    </div>
-  );
-}
+        <div 
+          className="card shadow-lg border-0 rounded-4"
+          style={{ 
+            maxWidth: "500px", 
+            width: "90%",
+            background: "white"
+          }}
+        >
+          <div className="card-body p-5 text-center">
+            {/* Icon */}
+            <div 
+              className="mb-4 mx-auto d-flex align-items-center justify-content-center rounded-circle"
+              style={{
+                width: "80px",
+                height: "80px",
+                background: "linear-gradient(135deg, #ffc107 0%, #ff9800 100%)",
+              }}
+            >
+              <i className="bi bi-exclamation-triangle-fill text-white" style={{ fontSize: "2.5rem" }}></i>
+            </div>
+
+            {/* Title */}
+            <h2 className="fw-bold mb-3" style={{ color: "#003087" }}>
+              Browser Required
+            </h2>
+
+            {/* Message */}
+            <p className="text-muted mb-4" style={{ fontSize: "1rem", lineHeight: "1.6" }}>
+              Google Sign-in requires a secure browser. Please open this page in your web browser (Safari, Chrome, Firefox, or Brave).
+            </p>
+
+            {/* Instructions */}
+            <div className="text-start mb-4 p-4 rounded-3" style={{ background: "#f8f9fa" }}>
+              <p className="fw-semibold mb-3" style={{ color: "#003087" }}>
+                <i className="bi bi-info-circle me-2"></i>
+                How to open in browser:
+              </p>
+              <ol className="mb-0 ps-3" style={{ lineHeight: "1.8" }}>
+                <li>Tap the <strong>menu (⋯)</strong> button at the top or bottom</li>
+                <li>Select <strong>"Open in Browser"</strong> or <strong>"Open in Safari/Chrome"</strong></li>
+                <li>Or copy and paste: <code style={{ fontSize: "0.85rem" }}>www.freestuffnb.com</code></li>
+              </ol>
+            </div>
+
+            {/* Alternative - Copy URL */}
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText('https://www.freestuffnb.com');
+                alert('✓ Link copied! Paste it in your browser.');
+              }}
+              className="btn btn-outline-primary btn-lg w-100 mb-3"
+              style={{ borderRadius: "12px", fontWeight: "600" }}
+            >
+              <i className="bi bi-clipboard me-2"></i>
+              Copy Website Link
+            </button>
+
+            {/* Footer note */}
+            <p className="text-muted small mb-0">
+              <i className="bi bi-shield-check me-1"></i>
+              This is required for security reasons
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
@@ -85,7 +143,6 @@ function Login() {
       setLoading(true);
       setError("");
       await signInWithEmail(email, password);
-      // Will redirect via useEffect
     } catch (loginError) {
       console.error("Login failed:", loginError);
       setError(loginError.message || "Login failed. Please check your credentials.");
@@ -424,6 +481,21 @@ function Login() {
 
       {/* CSS Animations */}
       <style jsx>{`
+      /* Add to your Login.js <style> section */
+@media (max-width: 576px) {
+  .card-body {
+    padding: 2rem !important;
+  }
+  
+  code {
+    word-break: break-all;
+    display: block;
+    padding: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    margin-top: 8px;
+  }
+}
         @keyframes float {
           0%, 100% {
             transform: translateY(0px);
