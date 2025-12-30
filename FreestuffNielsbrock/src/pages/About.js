@@ -179,7 +179,7 @@ function About() {
                     marginBottom: "20px",
                   }}
                 >
-                  <i className="bi bi-leaf"></i>
+                  <i className="bi bi-tree"></i>
                 </div>
                 <h5 className="fw-bold">Lower Carbon Footprint</h5>
                 <p className="text-muted">
