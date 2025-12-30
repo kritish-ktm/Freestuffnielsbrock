@@ -62,26 +62,25 @@ function Navbar() {
 
         {/* Nav Links */}
         <div className="collapse navbar-collapse" id="navbarNav">
-          {/* Search Bar */}
-          <form className="d-flex mx-auto my-2 my-lg-0" onSubmit={handleSearch} style={{ maxWidth: "300px", width: "70%" }}>
-            <div className="search-wrapper">
-              <div className="input-group">
-                <input
-                  type="text"
-                  className="form-control search-input"
-                  placeholder="Search items..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button 
-                  className="btn search-button" 
-                  type="submit"
-                >
-                  <i className="bi bi-search"></i>
-                </button>
-              </div>
-            </div>
-          </form>
+          {/* Compact Expandable Search */}
+<form
+  className="d-flex align-items-center mx-3 compact-search"
+  onSubmit={handleSearch}
+>
+  <div className="input-group">
+    <input
+      type="text"
+      className="form-control compact-search-input"
+      placeholder="Search"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+    />
+    <button className="btn compact-search-btn" type="submit">
+      <i className="bi bi-search"></i>
+    </button>
+  </div>
+</form>
+
 
           <ul className="navbar-nav ms-auto align-items-center">
             <li className="nav-item">
@@ -195,6 +194,57 @@ function Navbar() {
       </div>
 
       <style jsx>{`
+      /* Compact expandable search */
+.compact-search {
+  max-width: 140px;
+  transition: max-width 0.3s ease;
+}
+
+.compact-search:focus-within {
+  max-width: 280px;
+}
+
+.compact-search-input {
+  border-radius: 50px 0 0 50px;
+  padding: 6px 12px;
+  font-size: 14px;
+  transition: width 0.3s ease;
+}
+
+.compact-search-btn {
+  border-radius: 0 50px 50px 0;
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #e0e0e0;
+}
+
+.compact-search-input::placeholder {
+  font-size: 13px;
+}
+
+/* Prevent wrapping */
+.navbar .input-group {
+  flex-wrap: nowrap;
+}
+
+
+      .search-dropdown {
+  min-width: 260px;
+}
+
+.search-dropdown .form-control {
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+.navbar .bi-search {
+  color: #000;
+}
+
+.navbar .bi-search:hover {
+  color: #D4AF37;
+}
+
         .navbar {
           border-bottom: 1px solid #f0f0f0;
         }

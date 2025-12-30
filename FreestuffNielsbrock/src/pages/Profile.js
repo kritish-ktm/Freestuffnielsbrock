@@ -6,11 +6,12 @@ import { supabase } from "../supabase";
 function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
-  
+
   const [formData, setFormData] = useState({
     full_name: "",
     section: "",
@@ -21,34 +22,28 @@ function Profile() {
     course: "",
   });
 
+  /* ---------------- LOAD PROFILE ---------------- */
   useEffect(() => {
-    // Redirect to login if no user
     if (!user) {
       navigate("/login");
       return;
     }
 
     const loadProfile = async () => {
-      try {
-        setLoading(true);
-        
-        // Get user metadata from auth
-        const fullName = user.user_metadata?.full_name || "";
-        const section = user.user_metadata?.section || "";
-        const intakeMonth = user.user_metadata?.intake_month || "";
+      setLoading(true);
 
+      try {
         setFormData({
-          full_name: fullName,
-          section: section,
-          intake_month: intakeMonth,
+          full_name: user.user_metadata?.full_name || "",
+          section: user.user_metadata?.section || "",
+          intake_month: user.user_metadata?.intake_month || "",
           phone_number: user.user_metadata?.phone_number || "",
           dob: user.user_metadata?.dob || "",
           campus_id: user.user_metadata?.campus_id || "",
           course: user.user_metadata?.course || "",
         });
-      } catch (error) {
-        console.error("Error loading profile:", error);
-        setMessage("Error loading profile");
+      } catch (err) {
+        setMessage("Failed to load profile");
         setMessageType("danger");
       } finally {
         setLoading(false);
@@ -58,425 +53,246 @@ function Profile() {
     loadProfile();
   }, [user, navigate]);
 
+  /* ---------------- HANDLERS ---------------- */
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.full_name.trim()) {
-      setMessage("⚠️ Please enter your full name");
-      setMessageType("danger");
-      return;
-    }
-
-    if (!formData.section.trim()) {
-      setMessage("⚠️ Please select your section");
-      setMessageType("danger");
-      return;
-    }
-
-    if (!formData.intake_month) {
-      setMessage("⚠️ Please select your intake month");
-      setMessageType("danger");
-      return;
-    }
-
     setSaving(true);
+
     try {
-      // Update user metadata
       const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: formData.full_name.trim(),
-          section: formData.section.trim(),
-          intake_month: formData.intake_month,
-          phone_number: formData.phone_number.trim(),
-          dob: formData.dob,
-          campus_id: formData.campus_id.trim(),
-          course: formData.course.trim(),
-        }
+        data: { ...formData },
       });
 
       if (error) throw error;
 
-      setMessage("✅ Profile updated successfully!");
+      setMessage("Profile updated successfully");
       setMessageType("success");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      setMessage("❌ Error updating profile: " + error.message);
+    } catch (err) {
+      setMessage(err.message);
       setMessageType("danger");
     } finally {
       setSaving(false);
     }
   };
 
+  /* ---------------- LOADING ---------------- */
   if (loading) {
     return (
-      <div className="container my-5 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-        <p className="mt-3">Loading profile...</p>
+      <div className="container text-center my-5">
+        <div className="spinner-border text-primary" />
+        <p className="mt-3">Loading dashboard...</p>
       </div>
     );
   }
 
+  /* ---------------- UI ---------------- */
   return (
     <div className="container my-5">
+
+      {/* HEADER */}
       <div className="mb-4">
-        <button 
-          className="btn btn-link text-decoration-none" 
+        <button
+          className="btn btn-link p-0 mb-2"
           onClick={() => navigate(-1)}
-          style={{ color: "#003087" }}
         >
-          <i className="bi bi-arrow-left me-2"></i>
-          Back
+          ← Back
         </button>
+
+        <h2 className="fw-bold">My Dashboard</h2>
+        <p className="text-muted">
+          Manage your profile and student information
+        </p>
       </div>
 
       <div className="row g-4">
-        {/* Profile Card Display - Owner's View Only */}
-        <div className="col-lg-4">
-          <div className="card shadow-lg border-0 sticky-top" style={{ top: "20px" }}>
-            <div className="card-body p-4">
-              {/* Profile Header */}
-              <div className="text-center mb-4">
-                <div 
-                  className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
-                  style={{
-                    width: "100px",
-                    height: "100px",
-                    backgroundColor: "#003087",
-                    color: "white",
-                    fontSize: "2.5rem"
-                  }}
-                >
-                  <i className="bi bi-person-fill"></i>
-                </div>
-                <h4 className="fw-bold mb-1" style={{ color: "#003087" }}>
-                  {formData.full_name || "No Name"}
-                </h4>
-                <p className="text-muted mb-0">{formData.section || "No Section"}</p>
-                <span className="badge bg-success mt-2">
-                  <i className="bi bi-check-circle me-1"></i>
-                  Your Profile
-                </span>
+
+        {/* SIDEBAR */}
+        <div className="col-lg-4 col-xl-3">
+          <div className="card shadow-sm border-0">
+            <div className="card-body text-center">
+
+              <div className="avatar-circle mb-3">
+                <i className="bi bi-person-fill"></i>
               </div>
+
+              <h5 className="fw-bold mb-0">
+                {formData.full_name || "No Name"}
+              </h5>
+              <small className="text-muted">
+                {formData.section || "No Section"}
+              </small>
+
+              <span className="badge bg-success d-block mt-2">
+                Active Student
+              </span>
 
               <hr />
 
-              {/* Profile Details */}
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-envelope-fill me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Email</small>
-                </div>
-                <p className="mb-0 ms-4">{user?.email || "N/A"}</p>
-              </div>
+              <ul className="list-unstyled small text-muted text-start">
+                <li className="mb-2">
+                  <i className="bi bi-envelope me-2"></i>
+                  {user?.email}
+                </li>
+                <li className="mb-2">
+                  <i className="bi bi-calendar me-2"></i>
+                  {formData.intake_month || "—"}
+                </li>
+                <li>
+                  <i className="bi bi-mortarboard me-2"></i>
+                  {formData.course || "—"}
+                </li>
+              </ul>
 
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-calendar-event me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Intake Month</small>
-                </div>
-                <p className="mb-0 ms-4">{formData.intake_month || "Not specified"}</p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-telephone-fill me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Phone</small>
-                </div>
-                <p className="mb-0 ms-4">{formData.phone_number || "Not specified"}</p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-cake2 me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Date of Birth</small>
-                </div>
-                <p className="mb-0 ms-4">
-                  {formData.dob 
-                    ? new Date(formData.dob).toLocaleDateString('en-GB', { 
-                        day: 'numeric', 
-                        month: 'long', 
-                        year: 'numeric' 
-                      })
-                    : "Not specified"}
-                </p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-card-text me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Student ID</small>
-                </div>
-                <p className="mb-0 ms-4">{formData.campus_id || "Not specified"}</p>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2">
-                  <i className="bi bi-mortarboard-fill me-2" style={{ color: "#003087" }}></i>
-                  <small className="text-muted">Course</small>
-                </div>
-                <p className="mb-0 ms-4">{formData.course || "Not specified"}</p>
-              </div>
-
-              {/* Profile Completion */}
-              <hr />
-              <div className="mt-3">
-                <small className="text-muted">Profile Completion</small>
-                <div className="progress mt-2" style={{ height: "8px" }}>
-                  <div 
-                    className="progress-bar bg-success" 
-                    role="progressbar" 
-                    style={{ 
-                      width: `${
-                        (Object.values(formData).filter(val => val && val.trim()).length / 
-                        Object.keys(formData).length) * 100
-                      }%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Edit Form */}
-        <div className="col-lg-8">
-          <div className="card shadow-lg border-0">
-            <div className="card-body p-5">
-              <h2 className="fw-bold mb-1" style={{ color: "#003087" }}>
-                <i className="bi bi-pencil-square me-2"></i>
+        {/* MAIN */}
+        <div className="col-lg-8 col-xl-9">
+          <div className="card shadow-sm border-0">
+            <div className="card-body p-4">
+
+              <h5 className="fw-bold mb-3">
                 Edit Profile
-              </h2>
-              <p className="text-muted mb-4">Update your profile information</p>
+              </h5>
 
               {message && (
-                <div className={`alert alert-${messageType} alert-dismissible fade show`} role="alert">
+                <div className={`alert alert-${messageType}`}>
                   {message}
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={() => setMessage("")}
-                  ></button>
                 </div>
               )}
 
               <form onSubmit={handleSubmit}>
-                {/* Email (Read-only) */}
-                <div className="mb-4">
-                  <label className="form-label fw-bold">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    value={user?.email || ""}
-                    disabled
-                  />
-                  <small className="text-muted">
-                    Your email cannot be changed
-                  </small>
+
+                <div className="row g-3">
+
+                  <div className="col-md-6">
+                    <label className="form-label">Full Name</label>
+                    <input
+                      type="text"
+                      name="full_name"
+                      className="form-control"
+                      value={formData.full_name}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Section</label>
+                    <input
+                      type="text"
+                      name="section"
+                      className="form-control"
+                      value={formData.section}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Intake Month</label>
+                    <select
+                      name="intake_month"
+                      className="form-select"
+                      value={formData.intake_month}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select</option>
+                      {[
+                        "January","February","March","April","May","June",
+                        "July","August","September","October","November","December"
+                      ].map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Phone</label>
+                    <input
+                      type="tel"
+                      name="phone_number"
+                      className="form-control"
+                      value={formData.phone_number}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Date of Birth</label>
+                    <input
+                      type="date"
+                      name="dob"
+                      className="form-control"
+                      value={formData.dob}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Student ID</label>
+                    <input
+                      type="text"
+                      name="campus_id"
+                      className="form-control"
+                      value={formData.campus_id}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label">Course</label>
+                    <input
+                      type="text"
+                      name="course"
+                      className="form-control"
+                      value={formData.course}
+                      onChange={handleChange}
+                    />
+                  </div>
+
                 </div>
 
-                {/* Full Name */}
-                <div className="mb-4">
-                  <label htmlFor="full_name" className="form-label fw-bold">
-                    Full Name <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="full_name"
-                    name="full_name"
-                    className="form-control form-control-lg"
-                    value={formData.full_name}
-                    onChange={handleChange}
-                    placeholder="e.g. John Doe"
-                    required
-                    disabled={saving}
-                  />
-                  <small className="text-muted">
-                    This is how other students will see you
-                  </small>
-                </div>
-
-                {/* Section */}
-                <div className="mb-4">
-                  <label htmlFor="section" className="form-label fw-bold">
-                    Section <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="section"
-                    name="section"
-                    className="form-control form-control-lg"
-                    value={formData.section}
-                    onChange={handleChange}
-                    placeholder="e.g. Section E"
-                    required
-                    disabled={saving}
-                  />
-                  <small className="text-muted">
-                    Which section are you in?
-                  </small>
-                </div>
-
-                {/* Intake Month */}
-                <div className="mb-4">
-                  <label htmlFor="intake_month" className="form-label fw-bold">
-                    Intake Month <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    id="intake_month"
-                    name="intake_month"
-                    className="form-select form-select-lg"
-                    value={formData.intake_month}
-                    onChange={handleChange}
-                    required
+                <div className="text-end mt-4">
+                  <button
+                    type="submit"
+                    className="btn btn-primary px-4"
                     disabled={saving}
                   >
-                    <option value="">-- Select Intake Month --</option>
-                    <option value="January">January</option>
-                    <option value="February">February</option>
-                    <option value="March">March</option>
-                    <option value="April">April</option>
-                    <option value="May">May</option>
-                    <option value="June">June</option>
-                    <option value="July">July</option>
-                    <option value="August">August</option>
-                    <option value="September">September</option>
-                    <option value="October">October</option>
-                    <option value="November">November</option>
-                    <option value="December">December</option>
-                  </select>
-                  <small className="text-muted">
-                    When did you start at Niels Brock?
-                  </small>
+                    {saving ? "Saving..." : "Save Changes"}
+                  </button>
                 </div>
 
-                {/* Phone Number */}
-                <div className="mb-4">
-                  <label htmlFor="phone_number" className="form-label fw-bold">
-                    Phone Number <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone_number"
-                    name="phone_number"
-                    className="form-control form-control-lg"
-                    value={formData.phone_number}
-                    onChange={handleChange}
-                    placeholder="e.g. +45 40 40 40 40"
-                    required
-                    disabled={saving}
-                  />
-                  <small className="text-muted">For verification purposes</small>
-                </div>
-
-                {/* Date of Birth */}
-                <div className="mb-4">
-                  <label htmlFor="dob" className="form-label fw-bold">
-                    Date of Birth <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    id="dob"
-                    name="dob"
-                    className="form-control form-control-lg"
-                    value={formData.dob}
-                    onChange={handleChange}
-                    required
-                    disabled={saving}
-                  />
-                </div>
-
-                {/* Campus ID */}
-                <div className="mb-4">
-                  <label htmlFor="campus_id" className="form-label fw-bold">
-                    Student ID <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="campus_id"
-                    name="campus_id"
-                    className="form-control form-control-lg"
-                    value={formData.campus_id}
-                    onChange={handleChange}
-                    placeholder="e.g. NB123456"
-                    required
-                    disabled={saving}
-                  />
-                </div>
-
-                {/* Course */}
-                <div className="mb-4">
-                  <label htmlFor="course" className="form-label fw-bold">
-                    Course / Program <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="course"
-                    name="course"
-                    className="form-control form-control-lg"
-                    value={formData.course}
-                    onChange={handleChange}
-                    placeholder="e.g. Business Administration"
-                    required
-                    disabled={saving}
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  className="btn btn-success btn-lg w-100 fw-bold"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-check-circle me-2"></i>
-                      Save Changes
-                    </>
-                  )}
-                </button>
               </form>
 
-              {/* Profile Info Box */}
-              <div className="mt-5 p-3 bg-light rounded">
-                <h6 className="fw-bold mb-3" style={{ color: "#003087" }}>
-                  <i className="bi bi-info-circle me-2"></i>
-                  Why we collect this information
-                </h6>
-                <ul className="text-muted small mb-0">
-                  <li><strong>Full Name:</strong> So other students know who you are</li>
-                  <li><strong>Section:</strong> To help build community within your section</li>
-                  <li><strong>Intake Month:</strong> To connect you with students in your cohort</li>
-                </ul>
-              </div>
-
-              {/* Privacy Notice */}
-              <div className="mt-3 p-3 bg-info bg-opacity-10 rounded border border-info">
-                <small className="text-muted">
-                  <i className="bi bi-shield-check me-2" style={{ color: "#003087" }}></i>
-                  <strong>Privacy:</strong> Your profile information is only visible to other logged-in users for safety and security purposes.
-                </small>
-              </div>
             </div>
           </div>
         </div>
+
       </div>
+
+      {/* STYLE */}
+      <style>{`
+        .avatar-circle {
+          width: 90px;
+          height: 90px;
+          background: linear-gradient(135deg, #003087, #0056d2);
+          border-radius: 50%;
+          color: white;
+          font-size: 2.2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: auto;
+        }
+      `}</style>
+
     </div>
   );
 }
