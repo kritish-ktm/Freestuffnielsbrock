@@ -7,10 +7,11 @@ function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("basic");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -22,277 +23,277 @@ function Profile() {
     course: "",
   });
 
-  /* ---------------- LOAD PROFILE ---------------- */
+  /* ---------- LOAD PROFILE ---------- */
   useEffect(() => {
     if (!user) {
       navigate("/login");
       return;
     }
 
-    const loadProfile = async () => {
-      setLoading(true);
-
-      try {
-        setFormData({
-          full_name: user.user_metadata?.full_name || "",
-          section: user.user_metadata?.section || "",
-          intake_month: user.user_metadata?.intake_month || "",
-          phone_number: user.user_metadata?.phone_number || "",
-          dob: user.user_metadata?.dob || "",
-          campus_id: user.user_metadata?.campus_id || "",
-          course: user.user_metadata?.course || "",
-        });
-      } catch (err) {
-        setMessage("Failed to load profile");
-        setMessageType("danger");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProfile();
+    setFormData({
+      full_name: user.user_metadata?.full_name || "",
+      section: user.user_metadata?.section || "",
+      intake_month: user.user_metadata?.intake_month || "",
+      phone_number: user.user_metadata?.phone_number || "",
+      dob: user.user_metadata?.dob || "",
+      campus_id: user.user_metadata?.campus_id || "",
+      course: user.user_metadata?.course || "",
+    });
   }, [user, navigate]);
 
-  /* ---------------- HANDLERS ---------------- */
+  /* ---------- HANDLERS ---------- */
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSave = async () => {
     setSaving(true);
+    setMessage("");
 
     try {
       const { error } = await supabase.auth.updateUser({
-        data: { ...formData },
+        data: formData,
       });
 
       if (error) throw error;
-
-      setMessage("Profile updated successfully");
-      setMessageType("success");
+      setMessage("Saved");
     } catch (err) {
       setMessage(err.message);
-      setMessageType("danger");
     } finally {
       setSaving(false);
     }
   };
 
-  /* ---------------- LOADING ---------------- */
-  if (loading) {
-    return (
-      <div className="container text-center my-5">
-        <div className="spinner-border text-primary" />
-        <p className="mt-3">Loading dashboard...</p>
-      </div>
-    );
-  }
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
 
-  /* ---------------- UI ---------------- */
+  /* ---------- UI ---------- */
   return (
-    <div className="container my-5">
-
-      {/* HEADER */}
-      <div className="mb-4">
-        <button
-          className="btn btn-link p-0 mb-2"
-          onClick={() => navigate(-1)}
-        >
-          ← Back
-        </button>
-
-        <h2 className="fw-bold">My Dashboard</h2>
-        <p className="text-muted">
-          Manage your profile and student information
-        </p>
-      </div>
-
+    <div className="container-fluid my-4">
       <div className="row g-4">
 
-        {/* SIDEBAR */}
-        <div className="col-lg-4 col-xl-3">
-          <div className="card shadow-sm border-0">
-            <div className="card-body text-center">
+        {/* SIDEBAR (DESKTOP) */}
+        <aside className="col-lg-3 d-none d-lg-block">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body">
 
-              <div className="avatar-circle mb-3">
-                <i className="bi bi-person-fill"></i>
+              {/* AVATAR */}
+              <div className="text-center mb-4">
+                <label className="avatar-wrapper">
+                  <input type="file" hidden onChange={handleAvatarChange} />
+                  <img
+                    src={avatarPreview || "/avatar-placeholder.png"}
+                    alt="Avatar"
+                    className="avatar-img"
+                  />
+                </label>
+
+                <h6 className="fw-bold mt-2 mb-0">
+                  {formData.full_name || "Your Name"}
+                </h6>
+                <small className="text-muted">{user.email}</small>
               </div>
 
-              <h5 className="fw-bold mb-0">
-                {formData.full_name || "No Name"}
-              </h5>
-              <small className="text-muted">
-                {formData.section || "No Section"}
-              </small>
-
-              <span className="badge bg-success d-block mt-2">
-                Active Student
-              </span>
-
-              <hr />
-
-              <ul className="list-unstyled small text-muted text-start">
-                <li className="mb-2">
-                  <i className="bi bi-envelope me-2"></i>
-                  {user?.email}
-                </li>
-                <li className="mb-2">
-                  <i className="bi bi-calendar me-2"></i>
-                  {formData.intake_month || "—"}
-                </li>
-                <li>
-                  <i className="bi bi-mortarboard me-2"></i>
-                  {formData.course || "—"}
-                </li>
-              </ul>
+              {/* NAV */}
+              <nav className="dashboard-nav">
+                {[
+                  ["basic", "Basic Info"],
+                  ["contact", "Contact"],
+                  ["student", "Student Info"],
+                  ["security", "Security"],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    className={`nav-btn ${activeTab === key ? "active" : ""}`}
+                    onClick={() => setActiveTab(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
 
             </div>
           </div>
-        </div>
+        </aside>
 
         {/* MAIN */}
-        <div className="col-lg-8 col-xl-9">
-          <div className="card shadow-sm border-0">
+        <main className="col-lg-9">
+
+          {/* MINI STATS */}
+          <div className="row g-3 mb-4">
+            <div className="col-sm-6 col-md-3">
+              <div className="stat-card">
+                <small>Profile</small>
+                <strong>Active</strong>
+              </div>
+            </div>
+            <div className="col-sm-6 col-md-3">
+              <div className="stat-card">
+                <small>Semester</small>
+                <strong>{formData.intake_month || "—"}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* CONTENT */}
+          <div className="card border-0 shadow-sm">
             <div className="card-body p-4">
 
-              <h5 className="fw-bold mb-3">
-                Edit Profile
-              </h5>
-
-              {message && (
-                <div className={`alert alert-${messageType}`}>
-                  {message}
-                </div>
+              {/* BASIC INFO */}
+              {activeTab === "basic" && (
+                <>
+                  <h6 className="section-title">Basic Info</h6>
+                  <input
+                    className="form-control mb-3"
+                    name="full_name"
+                    placeholder="Full name"
+                    value={formData.full_name}
+                    onChange={handleChange}
+                  />
+                  <input
+                    className="form-control"
+                    name="dob"
+                    type="date"
+                    value={formData.dob}
+                    onChange={handleChange}
+                  />
+                </>
               )}
 
-              <form onSubmit={handleSubmit}>
+              {/* CONTACT */}
+              {activeTab === "contact" && (
+                <>
+                  <h6 className="section-title">Contact</h6>
+                  <input
+                    className="form-control mb-3"
+                    name="phone_number"
+                    placeholder="Phone number"
+                    value={formData.phone_number}
+                    onChange={handleChange}
+                  />
+                  <input
+                    className="form-control"
+                    value={user.email}
+                    disabled
+                  />
+                </>
+              )}
 
-                <div className="row g-3">
+              {/* STUDENT INFO */}
+              {activeTab === "student" && (
+                <>
+                  <h6 className="section-title">Student Info</h6>
+                  <input
+                    className="form-control mb-3"
+                    name="section"
+                    placeholder="Section"
+                    value={formData.section}
+                    onChange={handleChange}
+                  />
+                  <input
+                    className="form-control mb-3"
+                    name="campus_id"
+                    placeholder="Student ID"
+                    value={formData.campus_id}
+                    onChange={handleChange}
+                  />
+                  <input
+                    className="form-control"
+                    name="course"
+                    placeholder="Course"
+                    value={formData.course}
+                    onChange={handleChange}
+                  />
+                </>
+              )}
 
-                  <div className="col-md-6">
-                    <label className="form-label">Full Name</label>
-                    <input
-                      type="text"
-                      name="full_name"
-                      className="form-control"
-                      value={formData.full_name}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Section</label>
-                    <input
-                      type="text"
-                      name="section"
-                      className="form-control"
-                      value={formData.section}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Intake Month</label>
-                    <select
-                      name="intake_month"
-                      className="form-select"
-                      value={formData.intake_month}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">Select</option>
-                      {[
-                        "January","February","March","April","May","June",
-                        "July","August","September","October","November","December"
-                      ].map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Phone</label>
-                    <input
-                      type="tel"
-                      name="phone_number"
-                      className="form-control"
-                      value={formData.phone_number}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Date of Birth</label>
-                    <input
-                      type="date"
-                      name="dob"
-                      className="form-control"
-                      value={formData.dob}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Student ID</label>
-                    <input
-                      type="text"
-                      name="campus_id"
-                      className="form-control"
-                      value={formData.campus_id}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="col-12">
-                    <label className="form-label">Course</label>
-                    <input
-                      type="text"
-                      name="course"
-                      className="form-control"
-                      value={formData.course}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                </div>
-
-                <div className="text-end mt-4">
+              {/* SECURITY */}
+              {activeTab === "security" && (
+                <>
+                  <h6 className="section-title">Security</h6>
+                  <p className="text-muted small">
+                    Password changes are handled securely via email.
+                  </p>
                   <button
-                    type="submit"
-                    className="btn btn-primary px-4"
-                    disabled={saving}
+                    className="btn btn-outline-secondary"
+                    onClick={() =>
+                      supabase.auth.resetPasswordForEmail(user.email)
+                    }
                   >
-                    {saving ? "Saving..." : "Save Changes"}
+                    Send password reset email
                   </button>
-                </div>
-
-              </form>
+                </>
+              )}
 
             </div>
           </div>
-        </div>
-
+        </main>
       </div>
 
-      {/* STYLE */}
+      {/* STICKY SAVE BAR */}
+      <div className="save-bar">
+        <span className="text-muted small">{message}</span>
+        <button
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? "Saving…" : "Save changes"}
+        </button>
+      </div>
+
+      {/* STYLES */}
       <style>{`
-        .avatar-circle {
+        .avatar-wrapper { cursor: pointer; }
+        .avatar-img {
           width: 90px;
           height: 90px;
-          background: linear-gradient(135deg, #003087, #0056d2);
           border-radius: 50%;
+          object-fit: cover;
+          background: #eee;
+        }
+
+        .dashboard-nav .nav-btn {
+          width: 100%;
+          text-align: left;
+          border: none;
+          background: none;
+          padding: 10px 12px;
+          border-radius: 6px;
+          margin-bottom: 4px;
+        }
+        .dashboard-nav .nav-btn.active {
+          background: #003087;
           color: white;
-          font-size: 2.2rem;
+        }
+
+        .stat-card {
+          background: #f8f9fb;
+          padding: 12px;
+          border-radius: 8px;
+        }
+
+        .section-title {
+          font-weight: 600;
+          margin-bottom: 12px;
+        }
+
+        .save-bar {
+          position: sticky;
+          bottom: 0;
+          background: white;
+          border-top: 1px solid #eee;
+          padding: 12px 20px;
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          justify-content: center;
-          margin: auto;
+          margin-top: 20px;
         }
       `}</style>
-
     </div>
   );
 }
