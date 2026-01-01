@@ -107,22 +107,22 @@ function Navbar() {
             </div>
           </form>
 
-          <ul className="navbar-nav ms-auto align-items-center">
+          <ul className="navbar-nav ms-auto align-items-center gap-1">
             <li className="nav-item">
-              <Link className="nav-link fw-semibold" to="/">
+              <Link className="nav-link fw-semibold px-2" to="/">
                 Home
               </Link>
             </li>
 
             <li className="nav-item">
-              <Link className="nav-link fw-semibold" to="/products">
-                Browse Items
+              <Link className="nav-link fw-semibold px-2" to="/products">
+                Browse
               </Link>
             </li>
 
             <li className="nav-item">
-              <Link className="nav-link fw-semibold" to="/about">
-                About Us
+              <Link className="nav-link fw-semibold px-2" to="/about">
+                About
               </Link>
             </li>
 
@@ -130,32 +130,32 @@ function Navbar() {
               <>
                 <li className="nav-item">
                   <Link 
-                    className="nav-link btn text-white ms-2 px-3" 
+                    className="nav-link btn text-white px-3 py-1" 
                     to="/post"
-                    style={{ backgroundColor: "#D4AF37", border: "none" }}
+                    style={{ backgroundColor: "#D4AF37", border: "none", fontSize: "0.9rem", whiteSpace: "nowrap" }}
                   >
-                    + Post Item
+                    + Post
                   </Link>
                 </li>
 
-                <li className="nav-item ms-3">
-                  <Link className="nav-link position-relative" to="/cart">
-                    <i className="bi bi-heart" style={{ fontSize: "1.5rem" }}></i>
+                <li className="nav-item ms-2">
+                  <Link className="nav-link position-relative p-1" to="/cart">
+                    <i className="bi bi-heart" style={{ fontSize: "1.4rem" }}></i>
                   </Link>
                 </li>
 
                 {/* GREEN Notification - Incoming Requests (People interested in MY items) */}
-                <li className="nav-item dropdown ms-3">
+                <li className="nav-item dropdown ms-2">
                   <button
-                    className="nav-link position-relative btn btn-link"
+                    className="nav-link position-relative btn btn-link p-1"
                     type="button"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                     style={{ textDecoration: "none" }}
                   >
-                    <i className="bi bi-inbox-fill" style={{ fontSize: "1.5rem", color: "#28a745" }}></i>
+                    <i className="bi bi-inbox-fill" style={{ fontSize: "1.4rem", color: "#28a745" }}></i>
                     {incomingCount > 0 && (
-                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" style={{ fontSize: "0.65rem" }}>
                         {incomingCount}
                         <span className="visually-hidden">unread incoming requests</span>
                       </span>
@@ -188,9 +188,13 @@ function Navbar() {
                       <>
                         {incomingRequests.map((request) => (
                           <li key={request.id}>
-                            <button
+                            <a
+                              href="#"
                               className="dropdown-item notification-item"
-                              onClick={() => handleIncomingClick(request)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleIncomingClick(request);
+                              }}
                             >
                               <div className="d-flex align-items-start gap-2">
                                 <img
@@ -214,7 +218,7 @@ function Navbar() {
                                 </div>
                                 <span className="badge bg-success-subtle text-success">NEW</span>
                               </div>
-                            </button>
+                            </a>
                             <hr className="dropdown-divider" />
                           </li>
                         ))}
@@ -232,17 +236,17 @@ function Navbar() {
                 </li>
 
                 {/* RED Notification - Request Updates (Status changes on items I requested) */}
-                <li className="nav-item dropdown ms-3">
+                <li className="nav-item dropdown ms-2">
                   <button
-                    className="nav-link position-relative btn btn-link"
+                    className="nav-link position-relative btn btn-link p-1"
                     type="button"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                     style={{ textDecoration: "none" }}
                   >
-                    <i className="bi bi-bell-fill" style={{ fontSize: "1.5rem", color: "#dc3545" }}></i>
+                    <i className="bi bi-bell-fill" style={{ fontSize: "1.4rem", color: "#dc3545" }}></i>
                     {updatesCount > 0 && (
-                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: "0.65rem" }}>
                         {updatesCount}
                         <span className="visually-hidden">unread updates</span>
                       </span>
@@ -275,9 +279,13 @@ function Navbar() {
                       <>
                         {requestUpdates.map((request) => (
                           <li key={request.id}>
-                            <button
+                            <a
+                              href="#"
                               className="dropdown-item notification-item"
-                              onClick={() => handleUpdateClick(request)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleUpdateClick(request);
+                              }}
                             >
                               <div className="d-flex align-items-start gap-2">
                                 <img
@@ -303,7 +311,7 @@ function Navbar() {
                                   {request.status === 'approved' ? '✓' : '✗'}
                                 </span>
                               </div>
-                            </button>
+                            </a>
                             <hr className="dropdown-divider" />
                           </li>
                         ))}
@@ -321,16 +329,16 @@ function Navbar() {
                 </li>
 
                 {/* User Info Dropdown */}
-                <li className="nav-item dropdown ms-3">
+                <li className="nav-item dropdown ms-2">
                   <button
-                    className="nav-link dropdown-toggle d-flex align-items-center btn btn-link"
+                    className="nav-link dropdown-toggle d-flex align-items-center btn btn-link p-1"
                     type="button"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                     style={{ textDecoration: "none" }}
                   >
-                    <i className="bi bi-person-circle me-2" style={{ fontSize: "1.5rem" }}></i>
-                    <span className="d-none d-md-inline">{getUserName()}</span>
+                    <i className="bi bi-person-circle me-1" style={{ fontSize: "1.4rem" }}></i>
+                    <span className="d-none d-lg-inline" style={{ fontSize: "0.9rem" }}>{getUserName()}</span>
                   </button>
 
                   <ul className="dropdown-menu dropdown-menu-end">
@@ -386,11 +394,11 @@ function Navbar() {
                 </li>
               </>
             ) : (
-              <li className="nav-item ms-3">
+              <li className="nav-item ms-2">
                 <Link 
                   to="/login" 
-                  className="btn btn-primary px-4"
-                  style={{ backgroundColor: "#003087", border: "none" }}
+                  className="btn btn-primary px-3 py-1"
+                  style={{ backgroundColor: "#003087", border: "none", fontSize: "0.9rem" }}
                 >
                   Login
                 </Link>
@@ -412,6 +420,8 @@ function Navbar() {
           border: none;
           width: 100%;
           text-align: left;
+          text-decoration: none;
+          display: block;
         }
 
         .notification-item:hover {
@@ -422,32 +432,43 @@ function Navbar() {
           background-color: #e9ecef;
         }
 
+        /* Compact navbar */
+        .navbar-nav {
+          gap: 0.25rem;
+        }
+
+        .navbar-nav .nav-link {
+          padding: 0.4rem 0.6rem !important;
+          font-size: 0.95rem;
+          white-space: nowrap;
+        }
+
         /* Compact search */
         .compact-search {
-          max-width: 140px;
+          max-width: 120px;
           transition: max-width 0.3s ease;
         }
 
         .compact-search:focus-within {
-          max-width: 280px;
+          max-width: 220px;
         }
 
         .compact-search-input {
           border-radius: 50px 0 0 50px;
-          padding: 6px 12px;
-          font-size: 14px;
+          padding: 5px 10px;
+          font-size: 13px;
           transition: width 0.3s ease;
         }
 
         .compact-search-btn {
           border-radius: 0 50px 50px 0;
-          padding: 6px 12px;
+          padding: 5px 10px;
           background: white;
           border: 1px solid #e0e0e0;
         }
 
         .compact-search-input::placeholder {
-          font-size: 13px;
+          font-size: 12px;
         }
 
         .navbar .input-group {
@@ -456,6 +477,7 @@ function Navbar() {
 
         .navbar {
           border-bottom: 1px solid #f0f0f0;
+          padding: 0.5rem 0;
         }
 
         .nav-link {
@@ -477,7 +499,6 @@ function Navbar() {
 
         .btn:hover {
           opacity: 0.9;
-          transform: translateY(-1px);
         }
 
         /* Badge animations */
@@ -491,6 +512,18 @@ function Navbar() {
           }
           50% {
             transform: translate(-50%, -50%) scale(1.1);
+          }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 991px) {
+          .navbar-nav {
+            gap: 0.5rem;
+            padding-top: 1rem;
+          }
+
+          .navbar-nav .nav-link {
+            padding: 0.5rem 1rem !important;
           }
         }
       `}</style>
