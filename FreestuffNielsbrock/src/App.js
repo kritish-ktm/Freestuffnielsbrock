@@ -22,6 +22,8 @@ import AdminReports from "./pages/AdminReports";
 import AuthCallback from "./pages/AuthCallback";
 import AdminAnalytics from "./pages/AdminAnalytics";  
 import Signup from "./pages/Signup";
+import ManageRequests from "./pages/ManageRequests";
+import Requests from "./pages/Requests";
 import {AuthProvider} from "./context/AuthContext"; 
 import {NotificationProvider} from "./context/NotificationContext"; 
 
@@ -53,6 +55,8 @@ function App() {
         <Route path="/admin/analytics" element={<AdminAnalytics />} />  
         <Route path="/auth/callback" element={<AuthCallback />} />  
         <Route path="/signup" element={<Signup />} />
+        <Route path="/manage-requests" element={<ManageRequests />} />
+        <Route path="/requests" element={<Requests />} />
       </Routes>
       </NotificationProvider>
       </AuthProvider>
