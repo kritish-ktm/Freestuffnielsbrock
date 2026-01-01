@@ -1,11 +1,23 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
 
 function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const {
+    incomingRequests,
+    requestUpdates,
+    incomingCount,
+    updatesCount,
+    markIncomingAsRead,
+    markAllIncomingAsRead,
+    markUpdateAsRead,
+    markAllUpdatesAsRead
+  } = useNotifications();
 
   const handleLogout = async () => {
     try {
@@ -22,18 +34,32 @@ function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to products page with search query
       navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery(""); // Clear search after navigating
+      setSearchQuery("");
     }
   };
 
-  // Get user display name
   const getUserName = () => {
     if (!user) return "";
     return user.user_metadata?.full_name || 
            user.email?.split('@')[0] || 
            "User";
+  };
+
+  const getPlaceholderImage = (id) => {
+    const colors = ['667eea', '764ba2', 'f093fb', '4facfe', 'fa709a', '43e97b'];
+    const color = colors[id % colors.length];
+    return `https://via.placeholder.com/50x50/${color}/ffffff?text=Item`;
+  };
+
+  const handleIncomingClick = (request) => {
+    markIncomingAsRead(request.id);
+    navigate("/manage-requests");
+  };
+
+  const handleUpdateClick = (request) => {
+    markUpdateAsRead(request.id);
+    navigate("/requests");
   };
 
   return (
@@ -62,25 +88,24 @@ function Navbar() {
 
         {/* Nav Links */}
         <div className="collapse navbar-collapse" id="navbarNav">
-          {/* Compact Expandable Search */}
-<form
-  className="d-flex align-items-center mx-3 compact-search"
-  onSubmit={handleSearch}
->
-  <div className="input-group">
-    <input
-      type="text"
-      className="form-control compact-search-input"
-      placeholder="Search"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-    />
-    <button className="btn compact-search-btn" type="submit">
-      <i className="bi bi-search"></i>
-    </button>
-  </div>
-</form>
-
+          {/* Compact Search */}
+          <form
+            className="d-flex align-items-center mx-3 compact-search"
+            onSubmit={handleSearch}
+          >
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control compact-search-input"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button className="btn compact-search-btn" type="submit">
+                <i className="bi bi-search"></i>
+              </button>
+            </div>
+          </form>
 
           <ul className="navbar-nav ms-auto align-items-center">
             <li className="nav-item">
@@ -119,6 +144,182 @@ function Navbar() {
                   </Link>
                 </li>
 
+                {/* GREEN Notification - Incoming Requests (People interested in MY items) */}
+                <li className="nav-item dropdown ms-3">
+                  <button
+                    className="nav-link position-relative btn btn-link"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <i className="bi bi-inbox-fill" style={{ fontSize: "1.5rem", color: "#28a745" }}></i>
+                    {incomingCount > 0 && (
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
+                        {incomingCount}
+                        <span className="visually-hidden">unread incoming requests</span>
+                      </span>
+                    )}
+                  </button>
+
+                  <ul className="dropdown-menu dropdown-menu-end notification-dropdown" style={{ width: "350px", maxHeight: "400px", overflowY: "auto" }}>
+                    <li className="dropdown-header d-flex justify-content-between align-items-center">
+                      <span className="fw-bold" style={{ color: "#28a745" }}>
+                        <i className="bi bi-inbox me-2"></i>
+                        Incoming Requests
+                      </span>
+                      {incomingCount > 0 && (
+                        <button 
+                          className="btn btn-sm btn-link text-decoration-none"
+                          onClick={markAllIncomingAsRead}
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </li>
+                    <li><hr className="dropdown-divider" /></li>
+
+                    {incomingCount === 0 ? (
+                      <li className="px-3 py-4 text-center text-muted">
+                        <i className="bi bi-inbox" style={{ fontSize: "2rem" }}></i>
+                        <p className="mb-0 mt-2 small">No new requests</p>
+                      </li>
+                    ) : (
+                      <>
+                        {incomingRequests.map((request) => (
+                          <li key={request.id}>
+                            <button
+                              className="dropdown-item notification-item"
+                              onClick={() => handleIncomingClick(request)}
+                            >
+                              <div className="d-flex align-items-start gap-2">
+                                <img
+                                  src={request.item_image || getPlaceholderImage(request.item_id)}
+                                  alt={request.item_name}
+                                  className="rounded"
+                                  style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                                  onError={(e) => { e.target.src = getPlaceholderImage(request.item_id); }}
+                                />
+                                <div className="flex-grow-1">
+                                  <p className="mb-1 fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>
+                                    {request.requester_name} is interested
+                                  </p>
+                                  <p className="mb-1 text-muted small">
+                                    in your <strong>{request.item_name}</strong>
+                                  </p>
+                                  <small className="text-muted">
+                                    <i className="bi bi-clock me-1"></i>
+                                    {new Date(request.created_at).toLocaleDateString()}
+                                  </small>
+                                </div>
+                                <span className="badge bg-success-subtle text-success">NEW</span>
+                              </div>
+                            </button>
+                            <hr className="dropdown-divider" />
+                          </li>
+                        ))}
+                        <li>
+                          <Link 
+                            className="dropdown-item text-center text-primary fw-semibold"
+                            to="/manage-requests"
+                          >
+                            View All Requests →
+                          </Link>
+                        </li>
+                      </>
+                    )}
+                  </ul>
+                </li>
+
+                {/* RED Notification - Request Updates (Status changes on items I requested) */}
+                <li className="nav-item dropdown ms-3">
+                  <button
+                    className="nav-link position-relative btn btn-link"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <i className="bi bi-bell-fill" style={{ fontSize: "1.5rem", color: "#dc3545" }}></i>
+                    {updatesCount > 0 && (
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {updatesCount}
+                        <span className="visually-hidden">unread updates</span>
+                      </span>
+                    )}
+                  </button>
+
+                  <ul className="dropdown-menu dropdown-menu-end notification-dropdown" style={{ width: "350px", maxHeight: "400px", overflowY: "auto" }}>
+                    <li className="dropdown-header d-flex justify-content-between align-items-center">
+                      <span className="fw-bold" style={{ color: "#dc3545" }}>
+                        <i className="bi bi-bell me-2"></i>
+                        Request Updates
+                      </span>
+                      {updatesCount > 0 && (
+                        <button 
+                          className="btn btn-sm btn-link text-decoration-none"
+                          onClick={markAllUpdatesAsRead}
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </li>
+                    <li><hr className="dropdown-divider" /></li>
+
+                    {updatesCount === 0 ? (
+                      <li className="px-3 py-4 text-center text-muted">
+                        <i className="bi bi-bell" style={{ fontSize: "2rem" }}></i>
+                        <p className="mb-0 mt-2 small">No new updates</p>
+                      </li>
+                    ) : (
+                      <>
+                        {requestUpdates.map((request) => (
+                          <li key={request.id}>
+                            <button
+                              className="dropdown-item notification-item"
+                              onClick={() => handleUpdateClick(request)}
+                            >
+                              <div className="d-flex align-items-start gap-2">
+                                <img
+                                  src={request.items?.image || getPlaceholderImage(request.items?.id)}
+                                  alt={request.items?.name}
+                                  className="rounded"
+                                  style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                                  onError={(e) => { e.target.src = getPlaceholderImage(request.items?.id); }}
+                                />
+                                <div className="flex-grow-1">
+                                  <p className="mb-1 fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>
+                                    Request {request.status === 'approved' ? 'Approved' : 'Rejected'}
+                                  </p>
+                                  <p className="mb-1 text-muted small">
+                                    <strong>{request.items?.name}</strong>
+                                  </p>
+                                  <small className="text-muted">
+                                    <i className="bi bi-clock me-1"></i>
+                                    {new Date(request.last_status_change || request.created_at).toLocaleDateString()}
+                                  </small>
+                                </div>
+                                <span className={`badge ${request.status === 'approved' ? 'bg-success' : 'bg-danger'}`}>
+                                  {request.status === 'approved' ? '✓' : '✗'}
+                                </span>
+                              </div>
+                            </button>
+                            <hr className="dropdown-divider" />
+                          </li>
+                        ))}
+                        <li>
+                          <Link 
+                            className="dropdown-item text-center text-primary fw-semibold"
+                            to="/requests"
+                          >
+                            View All Updates →
+                          </Link>
+                        </li>
+                      </>
+                    )}
+                  </ul>
+                </li>
+
                 {/* User Info Dropdown */}
                 <li className="nav-item dropdown ms-3">
                   <button
@@ -154,9 +355,15 @@ function Navbar() {
                       </Link>
                     </li>
                     <li>
-                      <Link className="dropdown-item" to="/my-requests">
-                        <i className="bi bi-list-check me-2"></i>
-                        My Requests
+                      <Link className="dropdown-item" to="/manage-requests">
+                        <i className="bi bi-inbox me-2"></i>
+                        Manage Requests
+                      </Link>
+                    </li>
+                    <li>
+                      <Link className="dropdown-item" to="/requests">
+                        <i className="bi bi-bell me-2"></i>
+                        My Request Status
                       </Link>
                     </li>
                     <li>
@@ -194,56 +401,58 @@ function Navbar() {
       </div>
 
       <style jsx>{`
-      /* Compact expandable search */
-.compact-search {
-  max-width: 140px;
-  transition: max-width 0.3s ease;
-}
+        /* Notification styles */
+        .notification-dropdown {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
 
-.compact-search:focus-within {
-  max-width: 280px;
-}
+        .notification-item {
+          padding: 12px 16px;
+          transition: background-color 0.2s;
+          border: none;
+          width: 100%;
+          text-align: left;
+        }
 
-.compact-search-input {
-  border-radius: 50px 0 0 50px;
-  padding: 6px 12px;
-  font-size: 14px;
-  transition: width 0.3s ease;
-}
+        .notification-item:hover {
+          background-color: #f8f9fa;
+        }
 
-.compact-search-btn {
-  border-radius: 0 50px 50px 0;
-  padding: 6px 12px;
-  background: white;
-  border: 1px solid #e0e0e0;
-}
+        .notification-item:active {
+          background-color: #e9ecef;
+        }
 
-.compact-search-input::placeholder {
-  font-size: 13px;
-}
+        /* Compact search */
+        .compact-search {
+          max-width: 140px;
+          transition: max-width 0.3s ease;
+        }
 
-/* Prevent wrapping */
-.navbar .input-group {
-  flex-wrap: nowrap;
-}
+        .compact-search:focus-within {
+          max-width: 280px;
+        }
 
+        .compact-search-input {
+          border-radius: 50px 0 0 50px;
+          padding: 6px 12px;
+          font-size: 14px;
+          transition: width 0.3s ease;
+        }
 
-      .search-dropdown {
-  min-width: 260px;
-}
+        .compact-search-btn {
+          border-radius: 0 50px 50px 0;
+          padding: 6px 12px;
+          background: white;
+          border: 1px solid #e0e0e0;
+        }
 
-.search-dropdown .form-control {
-  font-size: 14px;
-  padding: 8px 12px;
-}
+        .compact-search-input::placeholder {
+          font-size: 13px;
+        }
 
-.navbar .bi-search {
-  color: #000;
-}
-
-.navbar .bi-search:hover {
-  color: #D4AF37;
-}
+        .navbar .input-group {
+          flex-wrap: nowrap;
+        }
 
         .navbar {
           border-bottom: 1px solid #f0f0f0;
@@ -271,96 +480,18 @@ function Navbar() {
           transform: translateY(-1px);
         }
 
-        /* Animated Google-style Search Bar */
-        .search-wrapper {
-          position: relative;
-          width: 100%;
+        /* Badge animations */
+        .badge.rounded-pill {
+          animation: pulse 2s infinite;
         }
 
-        .search-wrapper::before {
-          content: '';
-          position: absolute;
-          top: -3px;
-          left: -3px;
-          right: -3px;
-          bottom: -3px;
-          background: linear-gradient(
-            45deg,
-            #4285f4,
-            #ea4335,
-            #fbbc04,
-            #34a853,
-            #4285f4
-          );
-          background-size: 400% 400%;
-          border-radius: 50px;
-          z-index: -1;
-          animation: gradientRotate 3s ease infinite;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        .search-wrapper:hover::before,
-        .search-wrapper:focus-within::before {
-          opacity: 1;
-        }
-
-        @keyframes gradientRotate {
-          0% {
-            background-position: 0% 50%;
+        @keyframes pulse {
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
           }
           50% {
-            background-position: 100% 50%;
+            transform: translate(-50%, -50%) scale(1.1);
           }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-
-        .search-input {
-          border: 3px solid #e0e0e0;
-          border-right: none;
-          border-radius: 50px 0 0 50px;
-          padding: 12px 20px;
-          font-size: 16px;
-          font-weight: 600;
-          transition: all 0.3s ease;
-          background: white;
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: #4285f4;
-          box-shadow: none;
-        }
-
-        .search-input::placeholder {
-          font-weight: 500;
-          color: #9e9e9e;
-        }
-
-        .search-button {
-          border: 3px solid #e0e0e0;
-          border-left: none;
-          border-radius: 0 50px 50px 0;
-          padding: 12px 24px;
-          background: white;
-          color: #5f6368;
-          transition: all 0.3s ease;
-          font-size: 18px;
-        }
-
-        .search-button:hover {
-          background: #f8f9fa;
-          color: #4285f4;
-          transform: none;
-        }
-
-        .search-wrapper:hover .search-input,
-        .search-wrapper:hover .search-button,
-        .search-wrapper:focus-within .search-input,
-        .search-wrapper:focus-within .search-button {
-          border-color: transparent;
         }
       `}</style>
     </nav>

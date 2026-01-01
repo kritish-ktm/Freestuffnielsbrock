@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
 
 function Requests() {
   const { user } = useAuth();
+  const { refreshNotifications, markAllUpdatesAsRead } = useNotifications();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // 'all', 'pending', 'approved', 'rejected'
+  const [filter, setFilter] = useState('all');
   const [processingId, setProcessingId] = useState(null);
 
   useEffect(() => {
@@ -16,27 +18,18 @@ function Requests() {
     fetchRequests();
   }, [user]);
 
+  // Mark all updates as read when component mounts
+  useEffect(() => {
+    if (user) {
+      markAllUpdatesAsRead();
+    }
+  }, [user]);
+
   const fetchRequests = async () => {
     setLoading(true);
 
     try {
-      // First, get all items posted by the current user
-      const { data: userItems, error: itemsError } = await supabase
-        .from("items")
-        .select("id")
-        .eq("posted_by", user.id);
-
-      if (itemsError) throw itemsError;
-
-      if (!userItems || userItems.length === 0) {
-        setRequests([]);
-        setLoading(false);
-        return;
-      }
-
-      const itemIds = userItems.map(item => item.id);
-
-      // Then get all requests for those items with item details
+      // Get requests made BY the current user (not FOR the user's items)
       const { data, error } = await supabase
         .from("requests")
         .select(`
@@ -46,19 +39,21 @@ function Requests() {
           requester_name,
           status,
           item_id,
-          requester_id
+          requester_id,
+          last_status_change,
+          read_by_requester
         `)
-        .in("item_id", itemIds)
+        .eq("requester_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Fetch item details separately
+      // Fetch item details
       const requestsWithItems = await Promise.all(
         (data || []).map(async (req) => {
           const { data: itemData } = await supabase
             .from("items")
-            .select("id, name, image, description, price, category, location")
+            .select("id, name, image, description, price, category, location, whatsapp_number")
             .eq("id", req.item_id)
             .single();
 
@@ -70,6 +65,21 @@ function Requests() {
       );
 
       setRequests(requestsWithItems);
+
+      // Mark unread updates as read
+      const unreadIds = requestsWithItems
+        .filter(req => !req.read_by_requester && (req.status === 'approved' || req.status === 'rejected'))
+        .map(req => req.id);
+
+      if (unreadIds.length > 0) {
+        await supabase
+          .from("requests")
+          .update({ read_by_requester: true })
+          .in("id", unreadIds);
+        
+        // Refresh notifications
+        refreshNotifications();
+      }
     } catch (error) {
       console.error("Error fetching requests:", error);
       alert("Failed to load requests");
@@ -79,7 +89,7 @@ function Requests() {
   };
 
   const handleUpdateStatus = async (requestId, newStatus) => {
-    if (processingId) return; // Prevent multiple clicks
+    if (processingId) return;
 
     const confirmMessages = {
       approved: "Approve this request? The user will be able to contact you via WhatsApp.",
@@ -98,12 +108,12 @@ function Requests() {
 
       if (error) throw error;
 
-      // Update local state
       setRequests(requests.map(req => 
         req.id === requestId ? { ...req, status: newStatus } : req
       ));
 
       alert(`✅ Request ${newStatus} successfully!`);
+      refreshNotifications();
     } catch (error) {
       console.error("Error updating status:", error);
       alert("❌ Failed to update request");
@@ -127,6 +137,7 @@ function Requests() {
 
       setRequests(requests.filter(req => req.id !== requestId));
       alert("✅ Request deleted successfully!");
+      refreshNotifications();
     } catch (error) {
       console.error("Error deleting request:", error);
       alert("❌ Failed to delete request");
@@ -141,12 +152,10 @@ function Requests() {
     return `https://via.placeholder.com/300x200/${color}/ffffff?text=Item`;
   };
 
-  // Filter requests based on selected filter
   const filteredRequests = filter === 'all' 
     ? requests 
     : requests.filter(req => req.status === filter);
 
-  // Calculate counts
   const counts = {
     all: requests.length,
     pending: requests.filter(r => r.status === 'pending').length,
@@ -158,7 +167,7 @@ function Requests() {
     return (
       <div className="container py-5 text-center">
         <div className="spinner-border text-primary"></div>
-        <p className="mt-3">Loading requests...</p>
+        <p className="mt-3">Loading your requests...</p>
       </div>
     );
   }
@@ -166,10 +175,10 @@ function Requests() {
   if (requests.length === 0) {
     return (
       <div className="container py-5 text-center">
-        <i className="bi bi-inbox text-muted" style={{ fontSize: "5rem" }}></i>
-        <h2 className="mt-4">No requests yet</h2>
+        <i className="bi bi-bell text-muted" style={{ fontSize: "5rem" }}></i>
+        <h2 className="mt-4">No requests made yet</h2>
         <p className="text-muted lead">
-          When someone expresses interest in your items, they will appear here.
+          When you express interest in items, your requests will appear here.
         </p>
         <Link to="/products" className="btn btn-success btn-lg mt-3">
           Browse Items
@@ -180,15 +189,15 @@ function Requests() {
 
   return (
     <div className="container py-5">
-      {/* Header Section */}
+      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="mb-1">
-            <i className="bi bi-inbox me-2" style={{ color: "#003087" }}></i>
-            Interest Requests
+            <i className="bi bi-bell-fill text-danger me-2"></i>
+            My Request Status
           </h2>
           <p className="text-muted mb-0">
-            Manage requests from people interested in your items
+            Track status updates on items you're interested in
           </p>
         </div>
         <button 
@@ -199,6 +208,12 @@ function Requests() {
           <i className="bi bi-arrow-clockwise me-2"></i>
           Refresh
         </button>
+      </div>
+
+      {/* Info Alert */}
+      <div className="alert alert-info">
+        <i className="bi bi-info-circle me-2"></i>
+        These are items you've expressed interest in. Check their approval status here.
       </div>
 
       {/* Stats Cards */}
@@ -323,116 +338,81 @@ function Requests() {
                     {req.items?.description?.substring(0, 80)}...
                   </p>
 
-                  {/* Requester Info */}
+                  {/* Request Info */}
                   <div className="bg-light p-3 rounded mb-3">
-                    <h6 className="mb-2 fw-bold" style={{ fontSize: "0.9rem" }}>
-                      <i className="bi bi-person-circle me-1" style={{ color: "#003087" }}></i>
-                      Requester Details
-                    </h6>
                     <p className="mb-1 small">
-                      <strong>Name:</strong> {req.requester_name || "N/A"}
+                      <strong>Requested:</strong> {new Date(req.created_at).toLocaleDateString()}
                     </p>
-                    <p className="mb-1 small">
-                      <strong>Email:</strong> {req.requester_email}
-                    </p>
-                    <p className="mb-0 small text-muted">
-                      <i className="bi bi-calendar me-1"></i>
-                      {new Date(req.created_at).toLocaleDateString()} at{" "}
-                      {new Date(req.created_at).toLocaleTimeString()}
-                    </p>
+                    {req.status !== 'pending' && (
+                      <p className="mb-0 small">
+                        <strong>Status changed:</strong> {new Date(req.last_status_change || req.created_at).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
+
+                  {/* Status Messages */}
+                  {req.status === 'approved' && (
+                    <div className="alert alert-success py-2 mb-3">
+                      <small>
+                        <i className="bi bi-check-circle me-1"></i>
+                        <strong>Approved!</strong> You can contact the owner via WhatsApp.
+                      </small>
+                    </div>
+                  )}
+
+                  {req.status === 'rejected' && (
+                    <div className="alert alert-danger py-2 mb-3">
+                      <small>
+                        <i className="bi bi-x-circle me-1"></i>
+                        <strong>Request declined.</strong> The owner didn't approve this time.
+                      </small>
+                    </div>
+                  )}
+
+                  {req.status === 'pending' && (
+                    <div className="alert alert-warning py-2 mb-3">
+                      <small>
+                        <i className="bi bi-clock me-1"></i>
+                        <strong>Awaiting approval.</strong> The owner will review your request soon.
+                      </small>
+                    </div>
+                  )}
 
                   {/* Action Buttons */}
                   <div className="mt-auto">
                     <div className="d-grid gap-2">
-                      {/* View Item Button */}
                       <Link
                         to={`/product/${req.items?.id}`}
                         className="btn btn-outline-primary btn-sm"
                       >
                         <i className="bi bi-eye me-1"></i>
-                        View Item
+                        View Item Details
                       </Link>
 
-                      {/* Status-specific actions */}
-                      {req.status === 'pending' && (
-                        <>
-                          <button
-                            onClick={() => handleUpdateStatus(req.id, 'approved')}
-                            className="btn btn-success btn-sm"
-                            disabled={processingId === req.id}
-                          >
-                            {processingId === req.id ? (
-                              <span className="spinner-border spinner-border-sm me-2"></span>
-                            ) : (
-                              <i className="bi bi-check-circle me-1"></i>
-                            )}
-                            Approve Request
-                          </button>
-                          <button
-                            onClick={() => handleUpdateStatus(req.id, 'rejected')}
-                            className="btn btn-danger btn-sm"
-                            disabled={processingId === req.id}
-                          >
-                            {processingId === req.id ? (
-                              <span className="spinner-border spinner-border-sm me-2"></span>
-                            ) : (
-                              <i className="bi bi-x-circle me-1"></i>
-                            )}
-                            Reject Request
-                          </button>
-                        </>
-                      )}
-
-                      {req.status === 'approved' && (
-                        <>
-                          <div className="alert alert-success py-2 mb-2">
-                            <small>
-                              <i className="bi bi-check-circle me-1"></i>
-                              User can contact you via WhatsApp
-                            </small>
-                          </div>
-                          <button
-                            onClick={() => handleUpdateStatus(req.id, 'rejected')}
-                            className="btn btn-outline-danger btn-sm"
-                            disabled={processingId === req.id}
-                          >
-                            <i className="bi bi-x-circle me-1"></i>
-                            Revoke Access
-                          </button>
-                        </>
-                      )}
-
-                      {req.status === 'rejected' && (
-                        <button
-                          onClick={() => handleUpdateStatus(req.id, 'approved')}
-                          className="btn btn-outline-success btn-sm"
-                          disabled={processingId === req.id}
-                        >
-                          <i className="bi bi-arrow-counterclockwise me-1"></i>
-                          Approve Now
-                        </button>
-                      )}
-
-                      {/* Contact Requester Button */}
-                      <div className="btn-group">
+                      {req.status === 'approved' && req.items?.whatsapp_number && (
                         <a
-                          href={`mailto:${req.requester_email}?subject=Regarding: ${req.items?.name}&body=Hi ${req.requester_name || 'there'},%0D%0A%0D%0AThank you for your interest in my item "${req.items?.name}".%0D%0A%0D%0A`}
-                          className="btn btn-outline-secondary btn-sm"
-                          title="Send email"
+                          href={`https://wa.me/${req.items.whatsapp_number}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-success btn-sm"
                         >
-                          <i className="bi bi-envelope me-1"></i>
-                          Email
+                          <i className="bi bi-whatsapp me-1"></i>
+                          Contact Owner
                         </a>
-                        <button
-                          onClick={() => handleDeleteRequest(req.id)}
-                          className="btn btn-outline-danger btn-sm"
-                          disabled={processingId === req.id}
-                          title="Delete request"
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </div>
+                      )}
+
+                      <button
+                        onClick={() => handleDeleteRequest(req.id)}
+                        className="btn btn-outline-danger btn-sm"
+                        disabled={processingId === req.id}
+                      >
+                        {processingId === req.id ? (
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                        ) : (
+                          <i className="bi bi-trash me-1"></i>
+                        )}
+                        Cancel Request
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -443,28 +423,28 @@ function Requests() {
       )}
 
       {/* Help Section */}
-      <div className="mt-5 p-4 bg-light rounded border-start border-primary border-4">
-        <h5 className="mb-3" style={{ color: "#003087" }}>
+      <div className="mt-5 p-4 bg-light rounded border-start border-danger border-4">
+        <h5 className="mb-3" style={{ color: "#dc3545" }}>
           <i className="bi bi-info-circle me-2"></i>
-          How Request Management Works
+          Understanding Request Status
         </h5>
         <div className="row">
           <div className="col-md-4 mb-3">
-            <h6 className="fw-bold">📥 Pending Requests</h6>
+            <h6 className="fw-bold">⏳ Pending</h6>
             <small className="text-muted">
-              New requests waiting for your review. Approve or reject based on your preference.
+              Your request is waiting for the owner's review. Be patient!
             </small>
           </div>
           <div className="col-md-4 mb-3">
-            <h6 className="fw-bold">✅ Approved Requests</h6>
+            <h6 className="fw-bold">✅ Approved</h6>
             <small className="text-muted">
-              Approved users can contact you via WhatsApp. You can revoke access anytime.
+              Great news! The owner approved your request. You can now contact them via WhatsApp.
             </small>
           </div>
           <div className="col-md-4 mb-3">
-            <h6 className="fw-bold">❌ Rejected Requests</h6>
+            <h6 className="fw-bold">❌ Rejected</h6>
             <small className="text-muted">
-              Declined requests. Users cannot contact you, but you can approve them later.
+              The owner declined this time. Don't worry, there are many other items to explore!
             </small>
           </div>
         </div>

@@ -22,10 +22,14 @@ import AdminReports from "./pages/AdminReports";
 import AuthCallback from "./pages/AuthCallback";
 import AdminAnalytics from "./pages/AdminAnalytics";  
 import Signup from "./pages/Signup";
+import {AuthProvider} from "./context/AuthContext"; 
+import {NotificationProvider} from "./context/NotificationContext"; 
 
 function App() {
   return (
     <>
+    <AuthProvider>
+    <NotificationProvider>  
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -50,6 +54,8 @@ function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />  
         <Route path="/signup" element={<Signup />} />
       </Routes>
+      </NotificationProvider>
+      </AuthProvider>
     </>
   );
 }

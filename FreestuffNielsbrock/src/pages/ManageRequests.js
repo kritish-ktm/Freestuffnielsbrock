@@ -1,11 +1,13 @@
 // src/pages/ManageRequests.js
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
 import { supabase } from "../supabase";
 import { Link } from "react-router-dom";
 
 function ManageRequests() {
   const { user } = useAuth();
+  const { refreshNotifications, markAllIncomingAsRead } = useNotifications();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'all', 'pending', 'approved', 'rejected'
@@ -13,6 +15,13 @@ function ManageRequests() {
   useEffect(() => {
     if (user) {
       fetchRequests();
+    }
+  }, [user]);
+
+  // Mark all incoming requests as read when component mounts
+  useEffect(() => {
+    if (user) {
+      markAllIncomingAsRead();
     }
   }, [user]);
 
@@ -56,6 +65,21 @@ function ManageRequests() {
       });
 
       setRequests(enrichedRequests);
+
+      // Mark all unread requests as read
+      const unreadIds = requestsData
+        .filter(req => !req.read_by_poster)
+        .map(req => req.id);
+
+      if (unreadIds.length > 0) {
+        await supabase
+          .from("requests")
+          .update({ read_by_poster: true })
+          .in("id", unreadIds);
+        
+        // Refresh notifications context
+        refreshNotifications();
+      }
     } catch (error) {
       console.error("Error fetching requests:", error);
       alert("Failed to load requests");
@@ -79,6 +103,9 @@ function ManageRequests() {
       ));
 
       alert(`✅ Request ${newStatus}!`);
+      
+      // Refresh notifications to update requester's notifications
+      refreshNotifications();
     } catch (error) {
       console.error("Error updating status:", error);
       alert("❌ Failed to update request");
@@ -109,9 +136,17 @@ function ManageRequests() {
     <div className="container my-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 style={{ color: "#003087" }}>
-          <i className="bi bi-inbox me-2"></i>
+          <i className="bi bi-inbox-fill text-success me-2"></i>
           Manage Interest Requests
         </h2>
+        <button 
+          className="btn btn-outline-primary"
+          onClick={fetchRequests}
+          disabled={loading}
+        >
+          <i className="bi bi-arrow-clockwise me-2"></i>
+          Refresh
+        </button>
       </div>
 
       <p className="text-muted mb-4">

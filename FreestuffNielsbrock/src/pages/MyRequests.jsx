@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
 
 function MyRequests() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { refreshNotifications, markAllIncomingAsRead } = useNotifications();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -16,63 +18,85 @@ function MyRequests() {
       return;
     }
 
-    const fetchRequests = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        // Fetch requests for items posted by THIS USER ONLY
-        // Get all items posted by current user first
-        const { data: userItems, error: itemsError } = await supabase
-          .from("items")
-          .select("id")
-          .eq("posted_by", user.id);
-
-        if (itemsError) throw itemsError;
-
-        const itemIds = userItems?.map(item => item.id) || [];
-
-        if (itemIds.length === 0) {
-          setRequests([]);
-          setLoading(false);
-          return;
-        }
-
-        // Now fetch requests for those items
-        const { data, error: fetchError } = await supabase
-          .from("requests")
-          .select(`
-            *,
-            items (
-              id,
-              name,
-              image,
-              category,
-              price,
-              created_at,
-              whatsapp_number
-            )
-          `)
-          .in("item_id", itemIds)
-          .order("created_at", { ascending: false });
-
-        if (fetchError) {
-          console.error("Fetch error:", fetchError);
-          throw fetchError;
-        }
-
-        console.log("Requests fetched:", data);
-        setRequests(data || []);
-      } catch (err) {
-        console.error("Error fetching requests:", err);
-        setError("Failed to load requests: " + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
+
+  // Mark all as read when component mounts
+  useEffect(() => {
+    if (user) {
+      markAllIncomingAsRead();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // Get all items posted by current user
+      const { data: userItems, error: itemsError } = await supabase
+        .from("items")
+        .select("id")
+        .eq("posted_by", user.id);
+
+      if (itemsError) throw itemsError;
+
+      const itemIds = userItems?.map(item => item.id) || [];
+
+      if (itemIds.length === 0) {
+        setRequests([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch requests for those items
+      const { data, error: fetchError } = await supabase
+        .from("requests")
+        .select(`
+          *,
+          items (
+            id,
+            name,
+            image,
+            category,
+            price,
+            created_at,
+            whatsapp_number
+          )
+        `)
+        .in("item_id", itemIds)
+        .order("created_at", { ascending: false });
+
+      if (fetchError) {
+        console.error("Fetch error:", fetchError);
+        throw fetchError;
+      }
+
+      console.log("Requests fetched:", data);
+      setRequests(data || []);
+
+      // Mark all as read (for poster)
+      if (data && data.length > 0) {
+        const unreadIds = data.filter(req => !req.read_by_poster).map(req => req.id);
+        if (unreadIds.length > 0) {
+          await supabase
+            .from("requests")
+            .update({ read_by_poster: true })
+            .in("id", unreadIds);
+          
+          // Refresh notifications context
+          refreshNotifications();
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+      setError("Failed to load requests: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeleteRequest = async (requestId) => {
     if (!window.confirm("Remove this person's interest?")) return;
@@ -87,6 +111,7 @@ function MyRequests() {
 
       setRequests(prev => prev.filter(req => req.id !== requestId));
       alert("✅ Request removed");
+      refreshNotifications();
     } catch (err) {
       console.error("Error deleting request:", err);
       alert("❌ Error: " + err.message);
@@ -135,10 +160,24 @@ function MyRequests() {
 
   return (
     <div className="container py-5">
-      <h2 className="mb-4">
-        <i className="bi bi-heart-fill text-danger me-2"></i>
-        Who's Interested in My Items ({requests.length})
-      </h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+          <i className="bi bi-inbox-fill text-success me-2"></i>
+          Incoming Requests ({requests.length})
+        </h2>
+        <button 
+          className="btn btn-outline-primary"
+          onClick={fetchRequests}
+        >
+          <i className="bi bi-arrow-clockwise me-2"></i>
+          Refresh
+        </button>
+      </div>
+
+      <div className="alert alert-info">
+        <i className="bi bi-info-circle me-2"></i>
+        These are people interested in your items. You can contact them or manage their requests here.
+      </div>
 
       <div className="row">
         {requests.map((req) => (
@@ -161,7 +200,16 @@ function MyRequests() {
                 {/* Item & User Info */}
                 <div className="col-md-8">
                   <div className="card-body">
-                    <h5 className="card-title">{req.items?.name}</h5>
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <h5 className="card-title mb-0">{req.items?.name}</h5>
+                      <span className={`badge ${
+                        req.status === 'pending' ? 'bg-warning text-dark' :
+                        req.status === 'approved' ? 'bg-success' :
+                        'bg-danger'
+                      }`}>
+                        {req.status?.toUpperCase() || 'PENDING'}
+                      </span>
+                    </div>
                     <p className="text-muted small mb-2">
                       <i className="bi bi-tag me-1"></i>
                       {req.items?.category || "General"}
@@ -182,6 +230,10 @@ function MyRequests() {
                           {req.requester_name || "Anonymous"}
                         </strong>
                       </p>
+                      <p className="mb-1 small text-muted">
+                        <i className="bi bi-envelope me-1"></i>
+                        {req.requester_email}
+                      </p>
                       <small className="text-muted">
                         <i className="bi bi-calendar me-1"></i>
                         Interested on: {new Date(req.created_at).toLocaleDateString()}
@@ -196,6 +248,13 @@ function MyRequests() {
                       >
                         View Item
                       </button>
+                      <a
+                        href={`mailto:${req.requester_email}?subject=Regarding: ${req.items?.name}`}
+                        className="btn btn-sm btn-outline-success"
+                        title="Send email"
+                      >
+                        <i className="bi bi-envelope"></i>
+                      </a>
                       <button
                         onClick={() => handleDeleteRequest(req.id)}
                         className="btn btn-sm btn-outline-danger"
