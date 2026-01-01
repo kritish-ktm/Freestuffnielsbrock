@@ -12,6 +12,7 @@ function ProductDetails() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [requestStatus, setRequestStatus] = useState(null); // 'pending', 'approved', 'rejected', or null
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -43,9 +44,38 @@ function ProductDetails() {
     }
   }, [id]);
 
+  // Fetch request status for current user
+  const fetchRequestStatus = useCallback(async () => {
+    if (!user || !id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("requests")
+        .select("status")
+        .eq("item_id", id)
+        .eq("requester_id", user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error("Error fetching request status:", error);
+        return;
+      }
+
+      if (data) {
+        setRequestStatus(data.status);
+      }
+    } catch (err) {
+      console.error("Error:", err);
+    }
+  }, [id, user]);
+
   useEffect(() => {
     fetchProduct();
   }, [fetchProduct]);
+
+  useEffect(() => {
+    fetchRequestStatus();
+  }, [fetchRequestStatus]);
 
   const getPlaceholderImage = (productId) => {
     const colors = ['667eea', '764ba2', 'f093fb', '4facfe', 'fa709a', '43e97b'];
@@ -70,11 +100,14 @@ function ProductDetails() {
           .delete()
           .eq("item_id", product.id)
           .eq("requester_id", user.id);
+
+        setRequestStatus(null);
+        alert("✅ Request removed successfully!");
       } else {
         // Add to interested
         addToInterested(product);
         
-        // Save to database
+        // Save to database with 'pending' status
         const { error: insertError } = await supabase
           .from("requests")
           .insert([{
@@ -82,16 +115,20 @@ function ProductDetails() {
             requester_id: user.id,
             requester_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "Anonymous",
             requester_email: user.email,
+            status: 'pending' // Default status
           }]);
 
         if (insertError) {
           console.error("Insert error:", insertError);
           throw insertError;
         }
+
+        setRequestStatus('pending');
+        alert("✅ Interest request sent! Wait for the poster to approve.");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Error: " + error.message);
+      alert("❌ Error: " + error.message);
     }
   };
 
@@ -104,6 +141,13 @@ function ProductDetails() {
     const message = `Hi! I'm interested in your "${product.name}" from Free Stuff Niels Brock! Is it still available? 📦\nLocation: ${product.location || "TBD"}\n\nThanks!`;
     const whatsappUrl = `https://wa.me/${product.whatsapp_number.replace(/\s+/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
+  };
+
+  // Check if user can contact (either they're the owner OR their request is approved)
+  const canContact = () => {
+    if (!user) return false;
+    if (product.posted_by === user.id) return true; // Owner can always see
+    return requestStatus === 'approved';
   };
 
   if (loading) {
@@ -181,25 +225,23 @@ function ProductDetails() {
             )}
 
             {product.posted_by_name && (
-  <p className="text-muted small mb-2">
-    <i className="bi bi-person-circle me-1"></i>
-    {product.posted_by === user?.id ? (
-      // If it's the current user's item, just show the name
-      <span>{product.posted_by_name}</span>
-    ) : (
-      // If it's someone else's item, make it clickable
-      <Link 
-        to={`/user/${product.posted_by}`}
-        className="text-decoration-none"
-        style={{ color: "#003087", fontWeight: "500" }}
-        onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
-        onMouseLeave={(e) => e.target.style.textDecoration = "none"}
-      >
-        {product.posted_by_name}
-      </Link>
-    )}
-  </p>
-)}
+              <p className="text-muted small mb-2">
+                <i className="bi bi-person-circle me-1"></i>
+                {product.posted_by === user?.id ? (
+                  <span>{product.posted_by_name}</span>
+                ) : (
+                  <Link 
+                    to={`/user/${product.posted_by}`}
+                    className="text-decoration-none"
+                    style={{ color: "#003087", fontWeight: "500" }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
+                    onMouseLeave={(e) => e.target.style.textDecoration = "none"}
+                  >
+                    {product.posted_by_name}
+                  </Link>
+                )}
+              </p>
+            )}
 
             {product.created_at && (
               <small className="text-muted">
@@ -214,35 +256,80 @@ function ProductDetails() {
             <div className="d-grid gap-3">
               {user ? (
                 <>
-                  <button
-                    onClick={handleWhatsAppMessage}
-                    className="btn btn-success btn-lg fw-bold shadow"
-                    style={{ backgroundColor: "#25D366", border: "none" }}
-                  >
-                    <i className="bi bi-whatsapp me-2"></i>
-                    Message on WhatsApp
-                  </button>
+                  {/* Show request status */}
+                  {requestStatus && product.posted_by !== user.id && (
+                    <div className={`alert ${
+                      requestStatus === 'pending' ? 'alert-warning' :
+                      requestStatus === 'approved' ? 'alert-success' :
+                      'alert-danger'
+                    } mb-3`} role="alert">
+                      <i className={`bi ${
+                        requestStatus === 'pending' ? 'bi-clock' :
+                        requestStatus === 'approved' ? 'bi-check-circle' :
+                        'bi-x-circle'
+                      } me-2`}></i>
+                      <strong>
+                        {requestStatus === 'pending' && 'Request Pending'}
+                        {requestStatus === 'approved' && 'Request Approved!'}
+                        {requestStatus === 'rejected' && 'Request Rejected'}
+                      </strong>
+                      <br />
+                      <small>
+                        {requestStatus === 'pending' && 'Waiting for poster approval to contact them.'}
+                        {requestStatus === 'approved' && 'You can now message the poster on WhatsApp!'}
+                        {requestStatus === 'rejected' && 'The poster declined your request.'}
+                      </small>
+                    </div>
+                  )}
 
-                  <button
-                    onClick={handleInterested}
-                    className={`btn btn-lg fw-bold shadow ${isInterested(product.id) ? "btn-danger" : "btn-outline-primary"}`}
-                  >
-                    <i className={`bi ${isInterested(product.id) ? "bi-heart-fill" : "bi-heart"} me-2`}></i>
-                    {isInterested(product.id) ? "Remove from My Requests" : "I'm Interested"}
-                  </button>
+                  {/* WhatsApp button - only show if approved or owner */}
+                  {canContact() && (
+                    <button
+                      onClick={handleWhatsAppMessage}
+                      className="btn btn-success btn-lg fw-bold shadow"
+                      style={{ backgroundColor: "#25D366", border: "none" }}
+                    >
+                      <i className="bi bi-whatsapp me-2"></i>
+                      Message on WhatsApp
+                    </button>
+                  )}
+
+                  {/* Interest button - hide if user is the owner */}
+                  {product.posted_by !== user.id && (
+                    <button
+                      onClick={handleInterested}
+                      className={`btn btn-lg fw-bold shadow ${isInterested(product.id) ? "btn-danger" : "btn-outline-primary"}`}
+                      disabled={requestStatus === 'rejected'}
+                    >
+                      <i className={`bi ${isInterested(product.id) ? "bi-heart-fill" : "bi-heart"} me-2`}></i>
+                      {isInterested(product.id) ? "Remove Interest Request" : "I'm Interested"}
+                    </button>
+                  )}
+
+                  {/* Info message if not approved yet */}
+                  {!canContact() && product.posted_by !== user.id && !requestStatus && (
+                    <div className="alert alert-info" role="alert">
+                      <i className="bi bi-info-circle me-2"></i>
+                      <strong>How it works:</strong>
+                      <br />
+                      <small>1. Click "I'm Interested" to send a request</small><br />
+                      <small>2. Wait for poster approval</small><br />
+                      <small>3. Once approved, you can message them on WhatsApp</small>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
                   <div className="alert alert-info" role="alert">
                     <i className="bi bi-info-circle me-2"></i>
-                    <strong>Login required</strong> to message and save items
+                    <strong>Login required</strong> to express interest and contact posters
                   </div>
                   <button
                     onClick={() => navigate("/login")}
                     className="btn btn-primary btn-lg fw-bold shadow"
                   >
                     <i className="bi bi-door-open me-2"></i>
-                    Login to Contact Poster
+                    Login to Get Started
                   </button>
                 </>
               )}

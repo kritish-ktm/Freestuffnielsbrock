@@ -11,8 +11,10 @@ function Home() {
   const [latestItems, setLatestItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openFAQ, setOpenFAQ] = useState(null);
+  const [communityComments, setCommunityComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
 
-  const testimonials = [
+  const staticTestimonials = [
     {
       id: 1,
       name: "Raman Sukhu",
@@ -102,6 +104,7 @@ function Home() {
 
   useEffect(() => {
     fetchLatestItems();
+    fetchCommunityComments();
   }, []);
 
   const fetchLatestItems = async () => {
@@ -123,6 +126,51 @@ function Home() {
       setLoading(false);
     }
   };
+
+  const fetchCommunityComments = async () => {
+    try {
+      setCommentsLoading(true);
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*")
+        .eq("page", "about")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      // Transform comments into testimonial format
+      const transformedComments = (data || []).map((comment, index) => {
+        const colors = ['#003087', '#00A9E0', '#D4AF37', '#667eea', '#764ba2', '#f093fb'];
+        const initials = comment.user_name
+          .split(' ')
+          .map(word => word[0])
+          .join('')
+          .toUpperCase()
+          .substring(0, 2);
+
+        return {
+          id: `comment-${comment.id}`,
+          name: comment.user_name,
+          section: "Community Member",
+          course: "Niels Brock Student",
+          feedback: comment.comment,
+          initials: initials,
+          color: colors[index % colors.length],
+          isRealComment: true
+        };
+      });
+
+      setCommunityComments(transformedComments);
+    } catch (error) {
+      console.error('Error fetching community comments:', error);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  // Combine static testimonials with real comments
+  const allTestimonials = [...staticTestimonials, ...communityComments];
 
   const handleLiveDelete = async (id) => {
     if (!window.confirm('Delete this item?')) return;
@@ -348,8 +396,6 @@ function Home() {
         </div>
       </section>
 
-    
-
       {/* Categories Section */}
       <section className="py-5">
         <div className="container">
@@ -451,112 +497,146 @@ function Home() {
       </section>
 
       {/* Testimonials Section - Marquee Style */}
-<section className="py-5 bg-light overflow-hidden">
-  <div className="container">
-    <h2 className="text-center mb-5" style={{ color: "#003087" }}>
-      What Students Say
-    </h2>
-  </div>
+      <section className="py-5 bg-light overflow-hidden">
+        <div className="container">
+          <h2 className="text-center mb-2" style={{ color: "#003087" }}>
+            What Students Say
+          </h2>
+          <p className="text-center text-muted mb-5">
+            <small>Real feedback from our community members</small>
+          </p>
+        </div>
 
-  {/* Row 1: Right → Left */}
-  <div className="marquee-container">
-    <div className="marquee-content marquee-rtl">
-      {[...testimonials, ...testimonials].map((testimonial, index) => (
-        <div key={`${testimonial.id}-row1-${index}`} className="testimonial-card">
-          <div className="card shadow-sm border-0 h-100">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center mb-3">
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-3"
-                  style={{
-                    width: "50px",
-                    height: "50px",
-                    backgroundColor: testimonial.color,
-                    fontSize: "1.1rem",
-                  }}
-                >
-                  {testimonial.initials}
-                </div>
-                <div>
-                  <h6 className="mb-0 fw-bold" style={{ color: "#003087" }}>
-                    {testimonial.name}
-                  </h6>
-                  <small className="text-muted">
-                    {testimonial.section} • {testimonial.course}
-                  </small>
-                </div>
-              </div>
-
-              <div className="mb-3">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <i
-                    key={star}
-                    className="bi bi-star-fill"
-                    style={{ color: "#FFD700", fontSize: "0.9rem" }}
-                  />
-                ))}
-              </div>
-
-              <p className="card-text text-muted mb-0" style={{ fontSize: "0.95rem" }}>
-                "{testimonial.feedback}"
-              </p>
+        {commentsLoading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading testimonials...</span>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
-  </div>
+        ) : allTestimonials.length === 0 ? (
+          <div className="text-center py-5">
+            <p className="text-muted">No testimonials yet. Be the first to share your experience!</p>
+          </div>
+        ) : (
+          <>
+            {/* Row 1: Right → Left */}
+            <div className="marquee-container">
+              <div className="marquee-content marquee-rtl">
+                {[...allTestimonials, ...allTestimonials].map((testimonial, index) => (
+                  <div key={`${testimonial.id}-row1-${index}`} className="testimonial-card">
+                    <div className="card shadow-sm border-0 h-100">
+                      <div className="card-body p-3">
+                        <div className="d-flex align-items-center mb-2">
+                          <div
+                            className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-2"
+                            style={{
+                              width: "40px",
+                              height: "40px",
+                              backgroundColor: testimonial.color,
+                              fontSize: "0.9rem",
+                              flexShrink: 0
+                            }}
+                          >
+                            {testimonial.initials}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <h6 className="mb-0 fw-bold text-truncate" style={{ color: "#003087", fontSize: "0.9rem" }}>
+                              {testimonial.name}
+                            </h6>
+                            <small className="text-muted d-block text-truncate" style={{ fontSize: "0.75rem" }}>
+                              {testimonial.section} • {testimonial.course}
+                            </small>
+                          </div>
+                        </div>
 
-  {/* Row 2: Left → Right */}
-  <div className="marquee-container mt-4">
-    <div className="marquee-content marquee-ltr">
-      {[...testimonials, ...testimonials].map((testimonial, index) => (
-        <div key={`${testimonial.id}-row2-${index}`} className="testimonial-card">
-          <div className="card shadow-sm border-0 h-100">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center mb-3">
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-3"
-                  style={{
-                    width: "50px",
-                    height: "50px",
-                    backgroundColor: testimonial.color,
-                    fontSize: "1.1rem",
-                  }}
-                >
-                  {testimonial.initials}
-                </div>
-                <div>
-                  <h6 className="mb-0 fw-bold" style={{ color: "#003087" }}>
-                    {testimonial.name}
-                  </h6>
-                  <small className="text-muted">
-                    {testimonial.section} • {testimonial.course}
-                  </small>
-                </div>
-              </div>
+                        <div className="mb-2">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <i
+                              key={star}
+                              className="bi bi-star-fill"
+                              style={{ color: "#FFD700", fontSize: "0.75rem" }}
+                            />
+                          ))}
+                        </div>
 
-              <div className="mb-3">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <i
-                    key={star}
-                    className="bi bi-star-fill"
-                    style={{ color: "#FFD700", fontSize: "0.9rem" }}
-                  />
+                        <p className="card-text text-muted mb-0" style={{ fontSize: "0.85rem", lineHeight: "1.4" }}>
+                          "{testimonial.feedback.length > 120 ? testimonial.feedback.substring(0, 120) + '...' : testimonial.feedback}"
+                        </p>
+
+                        {testimonial.isRealComment && (
+                          <div className="mt-2">
+                            <span className="badge bg-success" style={{ fontSize: "0.65rem" }}>
+                              <i className="bi bi-check-circle me-1"></i>Community Feedback
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
-
-              <p className="card-text text-muted mb-0" style={{ fontSize: "0.95rem" }}>
-                "{testimonial.feedback}"
-              </p>
             </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</section>
 
+            {/* Row 2: Left → Right */}
+            <div className="marquee-container mt-3">
+              <div className="marquee-content marquee-ltr">
+                {[...allTestimonials, ...allTestimonials].map((testimonial, index) => (
+                  <div key={`${testimonial.id}-row2-${index}`} className="testimonial-card">
+                    <div className="card shadow-sm border-0 h-100">
+                      <div className="card-body p-3">
+                        <div className="d-flex align-items-center mb-2">
+                          <div
+                            className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-2"
+                            style={{
+                              width: "40px",
+                              height: "40px",
+                              backgroundColor: testimonial.color,
+                              fontSize: "0.9rem",
+                              flexShrink: 0
+                            }}
+                          >
+                            {testimonial.initials}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <h6 className="mb-0 fw-bold text-truncate" style={{ color: "#003087", fontSize: "0.9rem" }}>
+                              {testimonial.name}
+                            </h6>
+                            <small className="text-muted d-block text-truncate" style={{ fontSize: "0.75rem" }}>
+                              {testimonial.section} • {testimonial.course}
+                            </small>
+                          </div>
+                        </div>
+
+                        <div className="mb-2">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <i
+                              key={star}
+                              className="bi bi-star-fill"
+                              style={{ color: "#FFD700", fontSize: "0.75rem" }}
+                            />
+                          ))}
+                        </div>
+
+                        <p className="card-text text-muted mb-0" style={{ fontSize: "0.85rem", lineHeight: "1.4" }}>
+                          "{testimonial.feedback.length > 120 ? testimonial.feedback.substring(0, 120) + '...' : testimonial.feedback}"
+                        </p>
+
+                        {testimonial.isRealComment && (
+                          <div className="mt-2">
+                            <span className="badge bg-success" style={{ fontSize: "0.65rem" }}>
+                              <i className="bi bi-check-circle me-1"></i>Community Feedback
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </section>
 
       {/* CTA Section */}
       <section
@@ -608,49 +688,63 @@ function Home() {
       <style jsx>{`
         /* Marquee Testimonials */
         .marquee-container {
-  width: 100%;
-  overflow: hidden;
-}
+          width: 100%;
+          overflow: hidden;
+        }
 
-.marquee-content {
-  display: flex;
-  width: max-content;
-  gap: 1.5rem;
-}
+        .marquee-content {
+          display: flex;
+          width: max-content;
+          gap: 1rem;
+        }
 
-/* Row 1: Right → Left */
-.marquee-rtl {
-  animation: marquee-rtl 30s linear infinite;
-}
+        /* Row 1: Right → Left */
+        .marquee-rtl {
+          animation: marquee-rtl 40s linear infinite;
+        }
 
-/* Row 2: Left → Right */
-.marquee-ltr {
-  transform: translateX(-50%);
-  animation: marquee-ltr 30s linear infinite;
-}
+        /* Row 2: Left → Right */
+        .marquee-ltr {
+          transform: translateX(-50%);
+          animation: marquee-ltr 40s linear infinite;
+        }
 
-@keyframes marquee-rtl {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
+        @keyframes marquee-rtl {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
 
-@keyframes marquee-ltr {
-  0% {
-    transform: translateX(-50%);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
+        @keyframes marquee-ltr {
+          0% {
+            transform: translateX(-50%);
+          }
+          100% {
+            transform: translateX(0);
+          }
+        }
 
-.testimonial-card {
-  min-width: 300px;
-}
+        .testimonial-card {
+          min-width: 280px;
+          max-width: 280px;
+        }
 
+        @media (max-width: 768px) {
+          .testimonial-card {
+            min-width: 240px;
+            max-width: 240px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .testimonial-card {
+            min-width: 220px;
+            max-width: 220px;
+          }
+        }
 
         /* Accordion Animations */
         .accordion-button:not(.collapsed) {
@@ -672,7 +766,7 @@ function Home() {
           border: none;
           border-radius: 12px;
           background: white;
-        }
+          }
         
         .category-card:hover {
           transform: translateY(-8px);
@@ -694,6 +788,18 @@ function Home() {
 
         .btn:hover {
           transform: translateY(-2px);
+        }
+
+        /* Pause animations on hover */
+        .marquee-content:hover {
+          animation-play-state: paused;
+        }
+
+        /* Smooth text rendering */
+        .testimonial-card .card-text {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          hyphens: auto;
         }
       `}</style>
     </div>
