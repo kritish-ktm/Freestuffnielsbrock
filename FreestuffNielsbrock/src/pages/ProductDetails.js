@@ -3,16 +3,18 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { supabase } from "../supabase";
+import ReportButton from "../components/ReportButton"; // ✅ FIX: default import
 
 function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isInterested, addToInterested, removeFromInterested } = useContext(CartContext);
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [requestStatus, setRequestStatus] = useState(null); // 'pending', 'approved', 'rejected', or null
+  const [requestStatus, setRequestStatus] = useState(null);
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -28,25 +30,26 @@ function ProductDetails() {
       if (fetchError) {
         console.error("Fetch error:", fetchError);
         setError("Item not found");
+        setProduct(null);
         return;
       }
 
-      if (data) {
-        setProduct(data);
-      } else {
-        setError("Item not found");
-      }
+      setProduct(data || null);
+      if (!data) setError("Item not found");
     } catch (err) {
       console.error("Error fetching product:", err);
       setError("Failed to load item");
+      setProduct(null);
     } finally {
       setLoading(false);
     }
   }, [id]);
 
-  // Fetch request status for current user
   const fetchRequestStatus = useCallback(async () => {
-    if (!user || !id) return;
+    if (!user || !id) {
+      setRequestStatus(null);
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -54,16 +57,14 @@ function ProductDetails() {
         .select("status")
         .eq("item_id", id)
         .eq("requester_id", user.id)
-        .single();
+        .maybeSingle(); // ✅ better than .single() (no error when not found)
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error) {
         console.error("Error fetching request status:", error);
         return;
       }
 
-      if (data) {
-        setRequestStatus(data.status);
-      }
+      setRequestStatus(data?.status ?? null);
     } catch (err) {
       console.error("Error:", err);
     }
@@ -78,9 +79,16 @@ function ProductDetails() {
   }, [fetchRequestStatus]);
 
   const getPlaceholderImage = (productId) => {
-    const colors = ['667eea', '764ba2', 'f093fb', '4facfe', 'fa709a', '43e97b'];
-    const color = colors[productId % colors.length];
+    const colors = ["667eea", "764ba2", "f093fb", "4facfe", "fa709a", "43e97b"];
+    const safeId = Number(productId) || 0;
+    const color = colors[safeId % colors.length];
     return `https://via.placeholder.com/600x400/${color}/ffffff?text=Item`;
+  };
+
+  const canContact = () => {
+    if (!user || !product) return false;
+    if (product.posted_by === user.id) return true;
+    return requestStatus === "approved" || requestStatus === "accepted";
   };
 
   const handleInterested = async () => {
@@ -88,47 +96,44 @@ function ProductDetails() {
       navigate("/login");
       return;
     }
+    if (!product) return;
 
     try {
       if (isInterested(product.id)) {
-        // Remove from interested
         removeFromInterested(product.id);
-        
-        // Delete from database
-        await supabase
+
+        const { error: deleteError } = await supabase
           .from("requests")
           .delete()
           .eq("item_id", product.id)
           .eq("requester_id", user.id);
 
+        if (deleteError) throw deleteError;
+
         setRequestStatus(null);
         alert("✅ Request removed successfully!");
       } else {
-        // Add to interested
         addToInterested(product);
-        
-        // Save to database with 'pending' status
-        const { error: insertError } = await supabase
-          .from("requests")
-          .insert([{
+
+        const { error: insertError } = await supabase.from("requests").insert([
+          {
             item_id: product.id,
             requester_id: user.id,
-            requester_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "Anonymous",
+            requester_name:
+              user.user_metadata?.full_name || user.email?.split("@")[0] || "Anonymous",
             requester_email: user.email,
-            status: 'pending' // Default status
-          }]);
+            status: "pending",
+          },
+        ]);
 
-        if (insertError) {
-          console.error("Insert error:", insertError);
-          throw insertError;
-        }
+        if (insertError) throw insertError;
 
-        setRequestStatus('pending');
+        setRequestStatus("pending");
         alert("✅ Interest request sent! Wait for the poster to approve.");
       }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("❌ Error: " + error.message);
+    } catch (err) {
+      console.error("Error:", err);
+      alert("❌ Error: " + (err?.message || "Something went wrong"));
     }
   };
 
@@ -138,16 +143,16 @@ function ProductDetails() {
       return;
     }
 
-    const message = `Hi! I'm interested in your "${product.name}" from Free Stuff Niels Brock! Is it still available? 📦\nLocation: ${product.location || "TBD"}\n\nThanks!`;
-    const whatsappUrl = `https://wa.me/${product.whatsapp_number.replace(/\s+/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
-  };
+    const message =
+      `Hi! I'm interested in your "${product.name}" from Free Stuff Niels Brock! Is it still available? 📦\n` +
+      `Location: ${product.location || "TBD"}\n\nThanks!`;
 
-  // Check if user can contact (either they're the owner OR their request is approved)
-  const canContact = () => {
-    if (!user) return false;
-    if (product.posted_by === user.id) return true; // Owner can always see
-    return requestStatus === 'approved';
+    const whatsappUrl = `https://wa.me/${String(product.whatsapp_number).replace(
+      /\s+/g,
+      ""
+    )}?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank");
   };
 
   if (loading) {
@@ -164,7 +169,7 @@ function ProductDetails() {
   if (error || !product) {
     return (
       <div className="container my-5 text-center">
-        <i className="bi bi-exclamation-circle" style={{ fontSize: "4rem", color: "#ccc" }}></i>
+        <i className="bi bi-exclamation-circle" style={{ fontSize: "4rem", color: "#ccc" }} />
         <h3 className="mt-3">{error || "Item not found"}</h3>
         <button className="btn btn-primary mt-3" onClick={() => navigate("/products")}>
           Back to Items
@@ -175,12 +180,12 @@ function ProductDetails() {
 
   return (
     <div className="container my-5">
-      <button 
-        className="btn btn-link mb-3 text-decoration-none" 
+      <button
+        className="btn btn-link mb-3 text-decoration-none"
         onClick={() => navigate("/products")}
         style={{ color: "#003087" }}
       >
-        <i className="bi bi-arrow-left me-2"></i>
+        <i className="bi bi-arrow-left me-2" />
         Back to Items
       </button>
 
@@ -193,7 +198,9 @@ function ProductDetails() {
               className="card-img-top rounded"
               alt={product.name}
               style={{ height: "450px", objectFit: "cover" }}
-              onError={(e) => { e.target.src = getPlaceholderImage(product.id); }}
+              onError={(e) => {
+                e.currentTarget.src = getPlaceholderImage(product.id);
+              }}
             />
           </div>
         </div>
@@ -201,17 +208,27 @@ function ProductDetails() {
         {/* Details */}
         <div className="col-md-6">
           <div className="card shadow-lg border-0 p-4">
-            <h1 className="display-6 fw-bold mb-3" style={{ color: "#003087" }}>
-              {product.name}
-            </h1>
+            {/* Title with Report Button */}
+            <div className="d-flex justify-content-between align-items-start mb-3">
+              <h1 className="display-6 fw-bold" style={{ color: "#003087" }}>
+                {product.name}
+              </h1>
+
+              {/* ✅ Report Button - show if logged in and not owner */}
+              {user && product.posted_by !== user.id && (
+                <ReportButton itemId={product.id} itemTitle={product.name} />
+              )}
+            </div>
 
             <div className="mb-3">
               <span className="h2 text-success fw-bold">
-                {product.price === 0 ? "FREE" : `${product.price} DKK`}
+                {Number(product.price) === 0 ? "FREE" : `${product.price} DKK`}
               </span>
               <span className="badge bg-info fs-6 ms-3">{product.category || "General"}</span>
               {product.condition && (
-                <span className="badge bg-secondary fs-6 ms-2">Condition: {product.condition}</span>
+                <span className="badge bg-secondary fs-6 ms-2">
+                  Condition: {product.condition}
+                </span>
               )}
             </div>
 
@@ -219,23 +236,23 @@ function ProductDetails() {
 
             {product.location && (
               <div className="d-flex align-items-center mb-3 text-muted">
-                <i className="bi bi-geo-alt-fill me-2" style={{ color: "#00A9E0" }}></i>
-                <strong>Pickup:</strong> {product.location}
+                <i className="bi bi-geo-alt-fill me-2" style={{ color: "#00A9E0" }} />
+                <strong className="me-2">Pickup:</strong> {product.location}
               </div>
             )}
 
             {product.posted_by_name && (
               <p className="text-muted small mb-2">
-                <i className="bi bi-person-circle me-1"></i>
+                <i className="bi bi-person-circle me-1" />
                 {product.posted_by === user?.id ? (
                   <span>{product.posted_by_name}</span>
                 ) : (
-                  <Link 
+                  <Link
                     to={`/user/${product.posted_by}`}
                     className="text-decoration-none"
                     style={{ color: "#003087", fontWeight: "500" }}
-                    onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
-                    onMouseLeave={(e) => e.target.style.textDecoration = "none"}
+                    onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                    onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                   >
                     {product.posted_by_name}
                   </Link>
@@ -245,7 +262,7 @@ function ProductDetails() {
 
             {product.created_at && (
               <small className="text-muted">
-                <i className="bi bi-calendar me-2"></i>
+                <i className="bi bi-calendar me-2" />
                 Posted: {new Date(product.created_at).toLocaleDateString()}
               </small>
             )}
@@ -256,64 +273,80 @@ function ProductDetails() {
             <div className="d-grid gap-3">
               {user ? (
                 <>
-                  {/* Show request status */}
                   {requestStatus && product.posted_by !== user.id && (
-                    <div className={`alert ${
-                      requestStatus === 'pending' ? 'alert-warning' :
-                      requestStatus === 'approved' ? 'alert-success' :
-                      'alert-danger'
-                    } mb-3`} role="alert">
-                      <i className={`bi ${
-                        requestStatus === 'pending' ? 'bi-clock' :
-                        requestStatus === 'approved' ? 'bi-check-circle' :
-                        'bi-x-circle'
-                      } me-2`}></i>
+                    <div
+                      className={`alert ${
+                        requestStatus === "pending"
+                          ? "alert-warning"
+                          : requestStatus === "approved" || requestStatus === "accepted"
+                          ? "alert-success"
+                          : "alert-danger"
+                      } mb-3`}
+                      role="alert"
+                    >
+                      <i
+                        className={`bi ${
+                          requestStatus === "pending"
+                            ? "bi-clock"
+                            : requestStatus === "approved" || requestStatus === "accepted"
+                            ? "bi-check-circle"
+                            : "bi-x-circle"
+                        } me-2`}
+                      />
                       <strong>
-                        {requestStatus === 'pending' && 'Request Pending'}
-                        {requestStatus === 'approved' && 'Request Approved!'}
-                        {requestStatus === 'rejected' && 'Request Rejected'}
+                        {requestStatus === "pending" && "Request Pending"}
+                        {(requestStatus === "approved" || requestStatus === "accepted") &&
+                          "Request Approved!"}
+                        {requestStatus === "rejected" && "Request Rejected"}
                       </strong>
                       <br />
                       <small>
-                        {requestStatus === 'pending' && 'Waiting for poster approval to contact them.'}
-                        {requestStatus === 'approved' && 'You can now message the poster on WhatsApp!'}
-                        {requestStatus === 'rejected' && 'The poster declined your request.'}
+                        {requestStatus === "pending" &&
+                          "Waiting for poster approval to contact them."}
+                        {(requestStatus === "approved" || requestStatus === "accepted") &&
+                          "You can now message the poster on WhatsApp!"}
+                        {requestStatus === "rejected" && "The poster declined your request."}
                       </small>
                     </div>
                   )}
 
-                  {/* WhatsApp button - only show if approved or owner */}
                   {canContact() && (
                     <button
                       onClick={handleWhatsAppMessage}
                       className="btn btn-success btn-lg fw-bold shadow"
                       style={{ backgroundColor: "#25D366", border: "none" }}
                     >
-                      <i className="bi bi-whatsapp me-2"></i>
+                      <i className="bi bi-whatsapp me-2" />
                       Message on WhatsApp
                     </button>
                   )}
 
-                  {/* Interest button - hide if user is the owner */}
                   {product.posted_by !== user.id && (
                     <button
                       onClick={handleInterested}
-                      className={`btn btn-lg fw-bold shadow ${isInterested(product.id) ? "btn-danger" : "btn-outline-primary"}`}
-                      disabled={requestStatus === 'rejected'}
+                      className={`btn btn-lg fw-bold shadow ${
+                        isInterested(product.id) ? "btn-danger" : "btn-outline-primary"
+                      }`}
+                      disabled={requestStatus === "rejected"}
                     >
-                      <i className={`bi ${isInterested(product.id) ? "bi-heart-fill" : "bi-heart"} me-2`}></i>
+                      <i
+                        className={`bi ${
+                          isInterested(product.id) ? "bi-heart-fill" : "bi-heart"
+                        } me-2`}
+                      />
                       {isInterested(product.id) ? "Remove Interest Request" : "I'm Interested"}
                     </button>
                   )}
 
-                  {/* Info message if not approved yet */}
                   {!canContact() && product.posted_by !== user.id && !requestStatus && (
                     <div className="alert alert-info" role="alert">
-                      <i className="bi bi-info-circle me-2"></i>
+                      <i className="bi bi-info-circle me-2" />
                       <strong>How it works:</strong>
                       <br />
-                      <small>1. Click "I'm Interested" to send a request</small><br />
-                      <small>2. Wait for poster approval</small><br />
+                      <small>1. Click "I'm Interested" to send a request</small>
+                      <br />
+                      <small>2. Wait for poster approval</small>
+                      <br />
                       <small>3. Once approved, you can message them on WhatsApp</small>
                     </div>
                   )}
@@ -321,31 +354,29 @@ function ProductDetails() {
               ) : (
                 <>
                   <div className="alert alert-info" role="alert">
-                    <i className="bi bi-info-circle me-2"></i>
+                    <i className="bi bi-info-circle me-2" />
                     <strong>Login required</strong> to express interest and contact posters
                   </div>
                   <button
                     onClick={() => navigate("/login")}
                     className="btn btn-primary btn-lg fw-bold shadow"
                   >
-                    <i className="bi bi-door-open me-2"></i>
+                    <i className="bi bi-door-open me-2" />
                     Login to Get Started
                   </button>
                 </>
               )}
 
-              <button
-                onClick={() => navigate("/products")}
-                className="btn btn-outline-secondary"
-              >
+              <button onClick={() => navigate("/products")} className="btn btn-outline-secondary">
                 Back to Items
               </button>
             </div>
 
             <div className="mt-4 p-3 bg-light rounded border-start border-primary border-4">
               <small className="text-muted">
-                <i className="bi bi-shield-check me-2" style={{ color: "#003087" }}></i>
-                <strong>Safety Tip:</strong> Always meet in public areas on campus (library, canteen, etc.)
+                <i className="bi bi-shield-check me-2" style={{ color: "#003087" }} />
+                <strong>Safety Tip:</strong> Always meet in public areas on campus (library, canteen,
+                etc.)
               </small>
             </div>
           </div>
@@ -359,7 +390,7 @@ function ProductDetails() {
           Check out other free items in <strong>{product.category}</strong> category!
         </p>
         <a href="/products" className="btn btn-outline-primary">
-          Browse All Items <i className="bi bi-arrow-right ms-2"></i>
+          Browse All Items <i className="bi bi-arrow-right ms-2" />
         </a>
       </div>
     </div>
