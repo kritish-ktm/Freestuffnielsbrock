@@ -106,6 +106,10 @@ function PostItem() {
       imageUrl = publicUrl;
       console.log('Image uploaded:', imageUrl);
 
+      // Calculate expiry date (60 days from now)
+      const now = new Date();
+      const expiryDate = new Date(now.getTime() + (60 * 24 * 60 * 60 * 1000)); // 60 days in milliseconds
+
       // Insert item into database
       setMessage("Saving item...");
       const { data, error } = await supabase
@@ -124,13 +128,15 @@ function PostItem() {
             posted_by_email: user.email,
             posted_by_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "Anonymous",
             created_at: new Date().toISOString(),
+            expiry_date: expiryDate.toISOString(), // ← ADD 60-DAY EXPIRY
+            status: 'active', // ← EXPLICITLY SET STATUS
           },
         ])
         .select();
 
       if (error) throw error;
 
-      setMessage("✅ Item posted successfully! Redirecting to products...");
+      setMessage("✅ Item posted successfully! It will expire in 60 days. Redirecting...");
       setMessageType("success");
 
       // Reset form
@@ -383,6 +389,7 @@ function PostItem() {
           <li>Upload a clear, well-lit photo of the item</li>
           <li>Provide clear pickup instructions</li>
           <li>Respond quickly to interested people</li>
+          <li><strong>Items expire after 60 days automatically</strong></li>
         </ul>
       </div>
     </div>
