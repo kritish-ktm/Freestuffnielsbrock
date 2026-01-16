@@ -29,6 +29,12 @@ function ReportButton({ itemId, itemTitle }) {
       return;
     }
 
+    if (!itemId) {
+  setError("Missing item id");
+  return;
+}
+
+
     if (!reason) {
       setError('Please select a reason');
       return;
@@ -38,39 +44,44 @@ function ReportButton({ itemId, itemTitle }) {
     setSubmitting(true);
 
     try {
-      const { data, error: submitError } = await supabase
-        .from('reports')
-        .insert({
-          item_id: itemId,
-          reporter_id: user.id,
-          reason,
-          description: sanitizeText(description)
-        });
+  const cleanDesc = sanitizeText(description || "");
 
-      if (submitError) {
-        if (submitError.message.includes('violates row-level security')) {
-          setError('You have reported too many items recently. Please try again later.');
-        } else if (submitError.code === '23505') {
-          setError('You have already reported this item.');
-        } else {
-          setError('Failed to submit report. Please try again.');
-        }
-      } else {
-        setSuccess(true);
-        setTimeout(() => {
-          setShowModal(false);
-          setSuccess(false);
-          setReason('');
-          setDescription('');
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('Report error:', err);
-      setError('An unexpected error occurred');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const { error: submitError } = await supabase
+  .from("reports")
+  .insert([{
+    report_type: "item",              // ✅ required
+    reported_id: itemId,              // ✅ required (uuid)
+    reporter_id: user.id,             // ✅ required (uuid)
+    reporter_email: user.email,       // ✅ optional
+    reason,                           // ✅ required
+    description: sanitizeText(description || "") || null
+  }]);
+
+    .select()
+    .single();
+
+  if (submitError) {
+    console.error("Supabase submitError:", submitError);
+    setError(submitError.message || "Failed to submit report");
+    return;
+  }
+
+  console.log("Report inserted:", data);
+  setSuccess(true);
+
+  setTimeout(() => {
+    setShowModal(false);
+    setSuccess(false);
+    setReason("");
+    setDescription("");
+  }, 2000);
+} catch (err) {
+  console.error("Report catch error:", err);
+  setError(err?.message || "An unexpected error occurred");
+} finally {
+  setSubmitting(false);
+}
+
 
   const handleClose = () => {
     setShowModal(false);
