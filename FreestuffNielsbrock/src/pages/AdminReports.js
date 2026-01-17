@@ -10,14 +10,21 @@ function AdminReports() {
   const [messageType, setMessageType] = useState("");
   const [filterStatus, setFilterStatus] = useState("pending");
 
+  // ✅ Safe helper (prevents substring crash)
+  const short = (v, n = 8) => String(v || "").substring(0, n);
+
   useEffect(() => {
     checkAdminAccess();
     fetchReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus]);
 
   const checkAdminAccess = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user || !user.user_metadata?.is_admin) {
         navigate("/admin/login", { replace: true });
       }
@@ -29,7 +36,7 @@ function AdminReports() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      
+
       let query = supabase
         .from("reports")
         .select("*")
@@ -40,8 +47,8 @@ function AdminReports() {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
+
       setReports(data || []);
     } catch (error) {
       console.error("Error fetching reports:", error);
@@ -74,11 +81,7 @@ function AdminReports() {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
 
     try {
-      const { error } = await supabase
-        .from("reports")
-        .delete()
-        .eq("id", reportId);
-
+      const { error } = await supabase.from("reports").delete().eq("id", reportId);
       if (error) throw error;
 
       setMessage("✅ Report deleted successfully");
@@ -95,6 +98,7 @@ function AdminReports() {
       pending: "bg-warning",
       reviewed: "bg-info",
       resolved: "bg-success",
+      rejected: "bg-danger",
     };
     return badges[status] || "bg-secondary";
   };
@@ -119,7 +123,6 @@ function AdminReports() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
-      {/* Navbar */}
       <nav className="navbar navbar-dark bg-dark shadow-sm">
         <div className="container-fluid">
           <span className="navbar-brand mb-0 h1">
@@ -145,15 +148,16 @@ function AdminReports() {
             <h4 className="fw-bold mb-3" style={{ color: "#003087" }}>
               <i className="bi bi-file-earmark-text me-2"></i>User & Item Reports
             </h4>
-            
+
             <div className="btn-group" role="group">
               <button
                 type="button"
                 className={`btn ${filterStatus === "all" ? "btn-primary" : "btn-outline-primary"}`}
                 onClick={() => setFilterStatus("all")}
               >
-                All Reports ({reports.length})
+                All ({reports.length})
               </button>
+
               <button
                 type="button"
                 className={`btn ${filterStatus === "pending" ? "btn-warning" : "btn-outline-warning"}`}
@@ -161,6 +165,7 @@ function AdminReports() {
               >
                 Pending
               </button>
+
               <button
                 type="button"
                 className={`btn ${filterStatus === "reviewed" ? "btn-info" : "btn-outline-info"}`}
@@ -168,6 +173,7 @@ function AdminReports() {
               >
                 Reviewed
               </button>
+
               <button
                 type="button"
                 className={`btn ${filterStatus === "resolved" ? "btn-success" : "btn-outline-success"}`}
@@ -185,60 +191,78 @@ function AdminReports() {
               <tr style={{ borderTop: "2px solid #dee2e6" }}>
                 <th>Report ID</th>
                 <th>Type</th>
-                <th>Reported ID</th>
+                <th>Item ID / Reported ID</th>
                 <th>Reason</th>
                 <th>Status</th>
                 <th>Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {reports.length > 0 ? (
-                reports.map(report => (
-                  <tr key={report.id}>
-                    <td className="fw-bold">{report.id.substring(0, 8)}...</td>
-                    <td>
-                      <span className={`badge ${getTypeBadge(report.report_type)}`}>
-                        {report.report_type}
-                      </span>
-                    </td>
-                    <td>{report.reported_id.substring(0, 8)}...</td>
-                    <td>{report.reason}</td>
-                    <td>
-                      <span className={`badge ${getStatusBadge(report.status)}`}>
-                        {report.status}
-                      </span>
-                    </td>
-                    <td>{new Date(report.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <div className="btn-group btn-group-sm">
-                        <button
-                          className="btn btn-outline-info"
-                          onClick={() => handleUpdateStatus(report.id, "reviewed")}
-                          disabled={report.status === "reviewed"}
-                          title="Mark as reviewed"
-                        >
-                          <i className="bi bi-eye"></i>
-                        </button>
-                        <button
-                          className="btn btn-outline-success"
-                          onClick={() => handleUpdateStatus(report.id, "resolved")}
-                          disabled={report.status === "resolved"}
-                          title="Mark as resolved"
-                        >
-                          <i className="bi bi-check-circle"></i>
-                        </button>
-                        <button
-                          className="btn btn-outline-danger"
-                          onClick={() => handleDeleteReport(report.id)}
-                          title="Delete report"
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                reports.map((report) => {
+                  // ✅ supports both schemas:
+                  const targetId = report.item_id || report.reported_id || "";
+
+                  return (
+                    <tr key={report.id}>
+                      <td className="fw-bold">{short(report.id)}...</td>
+
+                      <td>
+                        <span className={`badge ${getTypeBadge(report.report_type || "item")}`}>
+                          {report.report_type || "item"}
+                        </span>
+                      </td>
+
+                      <td>{targetId ? `${short(targetId)}...` : <span className="text-muted">N/A</span>}</td>
+
+                      <td>{report.reason || <span className="text-muted">N/A</span>}</td>
+
+                      <td>
+                        <span className={`badge ${getStatusBadge(report.status)}`}>
+                          {report.status || "pending"}
+                        </span>
+                      </td>
+
+                      <td>
+                        {report.created_at ? (
+                          new Date(report.created_at).toLocaleDateString()
+                        ) : (
+                          <span className="text-muted">N/A</span>
+                        )}
+                      </td>
+
+                      <td>
+                        <div className="btn-group btn-group-sm">
+                          <button
+                            className="btn btn-outline-info"
+                            onClick={() => handleUpdateStatus(report.id, "reviewed")}
+                            disabled={report.status === "reviewed"}
+                            title="Mark as reviewed"
+                          >
+                            <i className="bi bi-eye"></i>
+                          </button>
+                          <button
+                            className="btn btn-outline-success"
+                            onClick={() => handleUpdateStatus(report.id, "resolved")}
+                            disabled={report.status === "resolved"}
+                            title="Mark as resolved"
+                          >
+                            <i className="bi bi-check-circle"></i>
+                          </button>
+                          <button
+                            className="btn btn-outline-danger"
+                            onClick={() => handleDeleteReport(report.id)}
+                            title="Delete report"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan="7" className="text-center text-muted py-4">
