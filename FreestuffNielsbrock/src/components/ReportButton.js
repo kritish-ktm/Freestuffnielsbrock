@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,36 +13,20 @@ const REPORT_REASONS = [
 
 function ReportButton({ itemId, itemTitle }) {
   const { user } = useAuth();
-  const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [showModal]);
+  // Generate unique modal ID
+  const modalId = `reportModal-${itemId}`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent event bubbling
     
     if (!user) {
       setError('Please sign in to report items');
-      return;
-    }
-
-    if (!itemId) {
-      setError('Error: Item ID is missing');
       return;
     }
 
@@ -69,13 +53,24 @@ function ReportButton({ itemId, itemTitle }) {
         if (submitError.code === '23505') {
           setError('You have already reported this item.');
         } else {
+          console.error('Report error:', submitError);
           setError('Failed to submit report. Please try again.');
         }
         setSubmitting(false);
       } else {
         setSuccess(true);
         setTimeout(() => {
-          handleClose();
+          // Close modal using Bootstrap's modal instance
+          const modalElement = document.getElementById(modalId);
+          if (modalElement) {
+            const modal = window.bootstrap.Modal.getInstance(modalElement);
+            if (modal) modal.hide();
+          }
+          // Reset form
+          setReason('');
+          setDescription('');
+          setSuccess(false);
+          setError('');
         }, 2000);
       }
     } catch (err) {
@@ -85,80 +80,53 @@ function ReportButton({ itemId, itemTitle }) {
     }
   };
 
-  const handleClose = () => {
-    setShowModal(false);
-    setError('');
-    setSuccess(false);
+  const handleModalClose = () => {
     setReason('');
     setDescription('');
+    setError('');
+    setSuccess(false);
     setSubmitting(false);
   };
 
-  const handleBackdropClick = (e) => {
-    // Only close if clicking the backdrop itself, not its children
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
-  };
-
-  if (!showModal) {
-    return (
-      <button
-        onClick={() => setShowModal(true)}
-        className="btn btn-sm btn-outline-danger"
-        title="Report this item"
-      >
-        🚩 Report
-      </button>
-    );
-  }
-
   return (
     <>
-      {/* Report Button - Hidden when modal is open */}
+      {/* Report Button - triggers Bootstrap modal */}
       <button
-        onClick={() => setShowModal(true)}
+        type="button"
         className="btn btn-sm btn-outline-danger"
+        data-bs-toggle="modal"
+        data-bs-target={`#${modalId}`}
         title="Report this item"
-        style={{ visibility: 'hidden' }}
       >
         🚩 Report
       </button>
 
-      {/* Modal Portal */}
+      {/* Bootstrap Modal */}
       <div 
-        className="modal show d-block" 
+        className="modal fade" 
+        id={modalId}
         tabIndex="-1"
-        style={{ 
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 1050,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          overflow: 'auto'
-        }}
-        onClick={handleBackdropClick}
+        aria-labelledby={`${modalId}Label`}
+        aria-hidden="true"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
       >
-        <div 
-          className="modal-dialog modal-dialog-centered"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            {/* Modal Header */}
             <div className="modal-header">
-              <h5 className="modal-title">Report Item</h5>
+              <h5 className="modal-title" id={`${modalId}Label`}>
+                Report Item
+              </h5>
               <button
                 type="button"
                 className="btn-close"
-                onClick={handleClose}
+                data-bs-dismiss="modal"
                 aria-label="Close"
+                onClick={handleModalClose}
                 disabled={submitting}
               ></button>
             </div>
 
-            {/* Modal Body */}
             <div className="modal-body">
               {success ? (
                 <div className="text-center py-4">
@@ -167,16 +135,13 @@ function ReportButton({ itemId, itemTitle }) {
                   <p className="text-muted">We will review this item shortly.</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} id="reportForm">
+                <form onSubmit={handleSubmit}>
                   {/* Item Title */}
                   <div className="mb-3">
-                    <label htmlFor="item-title" className="form-label">
-                      Item
-                    </label>
+                    <label className="form-label">Item</label>
                     <input
                       type="text"
                       className="form-control"
-                      id="item-title"
                       value={itemTitle || 'Unknown Item'}
                       disabled
                     />
@@ -184,12 +149,11 @@ function ReportButton({ itemId, itemTitle }) {
 
                   {/* Reason */}
                   <div className="mb-3">
-                    <label htmlFor="reason" className="form-label">
+                    <label className="form-label">
                       Reason <span className="text-danger">*</span>
                     </label>
                     <select
                       className="form-select"
-                      id="reason"
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       required
@@ -206,12 +170,11 @@ function ReportButton({ itemId, itemTitle }) {
 
                   {/* Description */}
                   <div className="mb-3">
-                    <label htmlFor="description" className="form-label">
+                    <label className="form-label">
                       Additional Details (Optional)
                     </label>
                     <textarea
                       className="form-control"
-                      id="description"
                       rows="3"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -219,7 +182,7 @@ function ReportButton({ itemId, itemTitle }) {
                       maxLength={500}
                       disabled={submitting}
                     />
-                    <small className="form-text text-muted">
+                    <small className="text-muted">
                       {description.length}/500 characters
                     </small>
                   </div>
@@ -231,19 +194,20 @@ function ReportButton({ itemId, itemTitle }) {
                     </div>
                   )}
 
-                  {/* Form Note */}
+                  {/* Info Note */}
                   <div className="alert alert-info" role="alert">
                     <small>
                       Reports are reviewed by moderators. False reports may result in account suspension.
                     </small>
                   </div>
 
-                  {/* Modal Footer Buttons */}
+                  {/* Buttons */}
                   <div className="d-flex gap-2">
                     <button
                       type="button"
                       className="btn btn-secondary flex-fill"
-                      onClick={handleClose}
+                      data-bs-dismiss="modal"
+                      onClick={handleModalClose}
                       disabled={submitting}
                     >
                       Cancel
@@ -255,7 +219,7 @@ function ReportButton({ itemId, itemTitle }) {
                     >
                       {submitting ? (
                         <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
                           Submitting...
                         </>
                       ) : (
