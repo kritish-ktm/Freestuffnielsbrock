@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../context/AuthContext';
-import { sanitizeText } from '../utils/sanitize';
 
 const REPORT_REASONS = [
   { value: 'inappropriate_content', label: 'Inappropriate Content' },
@@ -49,7 +48,7 @@ function ReportButton({ itemId, itemTitle }) {
         item_id: itemId,
         reporter_id: user.id,
         reason: reason,
-        description: sanitizeText(description)
+        description: description,
       });
 
       const { data, error: submitError } = await supabase
