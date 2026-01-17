@@ -1,163 +1,191 @@
-import React, { useState } from "react";
-import { supabase } from "../supabase";
-import { useAuth } from "../context/AuthContext";
-import { sanitizeText } from "../utils/sanitize";
+import React, { useState } from 'react';
+import { supabase } from '../supabase';
+import { useAuth } from '../context/AuthContext';
+import { sanitizeText } from '../utils/sanitize';
 
 const REPORT_REASONS = [
-  { value: "suspicious", label: "Seems fishy / suspicious" },
-  { value: "scam", label: "Scam / Fraud" },
-  { value: "spam", label: "Spam" },
-  { value: "inappropriate_content", label: "Inappropriate content" },
-  { value: "misleading", label: "Misleading information" },
-  { value: "already_sold", label: "Already sold / not available" },
-  { value: "other", label: "Other" },
+  { value: 'inappropriate_content', label: 'Inappropriate Content' },
+  { value: 'spam', label: 'Spam' },
+  { value: 'scam', label: 'Scam/Fraud' },
+  { value: 'already_sold', label: 'Already Sold' },
+  { value: 'misleading', label: 'Misleading Information' },
+  { value: 'other', label: 'Other' }
 ];
 
-function ReportButton({
-  reportedId,   // ✅ uuid to be stored in reports.reported_id
-  title,        // ✅ item name (display only)
-  reportType = "item", // ✅ stored in reports.report_type
-}) {
+function ReportButton({ itemId, itemTitle }) {
   const { user } = useAuth();
-
   const [showModal, setShowModal] = useState(false);
-  const [reason, setReason] = useState("");
-  const [description, setDescription] = useState("");
+  const [reason, setReason] = useState('');
+  const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  const resetForm = () => {
-    setReason("");
-    setDescription("");
-    setError("");
-    setSuccess(false);
-  };
-
-  const handleClose = () => {
-    if (submitting) return;
-    setShowModal(false);
-    resetForm();
-  };
-
-  const handleOpen = () => {
-    if (!user) {
-      alert("Please log in to report items.");
-      return;
-    }
-    setShowModal(true);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
+    // Validation
     if (!user) {
-      setError("Please sign in to report items.");
-      return;
-    }
-    if (!reportedId) {
-      setError("Missing item id (reportedId).");
-      return;
-    }
-    if (!reason) {
-      setError("Please select a reason.");
+      setError('Please sign in to report items');
       return;
     }
 
+    if (!itemId) {
+      setError('Error: Item ID is missing. Please refresh the page.');
+      console.error('ReportButton: itemId is undefined');
+      return;
+    }
+
+    if (!reason) {
+      setError('Please select a reason');
+      return;
+    }
+
+    setError('');
     setSubmitting(true);
-    setError("");
 
     try {
-      const cleanDesc = sanitizeText(description || "");
-      const payload = [{
-        report_type: reportType,        // ✅ required
-        reported_id: reportedId,        // ✅ required (uuid)
-        reporter_id: user.id,           // ✅ required (uuid)
-        reporter_email: user.email || null,
-        reason,                         // ✅ required
-        description: cleanDesc ? cleanDesc : null,
-        // status + created_at handled by defaults
-      }];
+      console.log('Submitting report with data:', {
+        item_id: itemId,
+        reporter_id: user.id,
+        reason: reason,
+        description: sanitizeText(description)
+      });
 
-      const { error: submitError } = await supabase
-        .from("reports")
-        .insert(payload);
+      const { data, error: submitError } = await supabase
+        .from('reports')
+        .insert({
+          item_id: itemId,
+          reporter_id: user.id,
+          reason: reason,
+          description: description ? sanitizeText(description) : null,
+          reporter_email: user.email,
+        });
 
       if (submitError) {
-        console.error("Report submit error:", submitError);
-        setError(submitError.message || "Failed to submit report.");
-        return;
+        console.error('Supabase error:', submitError);
+        
+        if (submitError.message.includes('violates row-level security')) {
+          setError('You have reported too many items recently. Please try again later.');
+        } else if (submitError.code === '23505') {
+          setError('You have already reported this item.');
+        } else if (submitError.message.includes('violates foreign key')) {
+          setError('This item no longer exists.');
+        } else {
+          setError('Failed to submit report: ' + submitError.message);
+        }
+      } else {
+        console.log('Report submitted successfully:', data);
+        setSuccess(true);
+        setTimeout(() => {
+          setShowModal(false);
+          setSuccess(false);
+          setReason('');
+          setDescription('');
+        }, 2000);
       }
-
-      setSuccess(true);
-      setTimeout(() => {
-        setShowModal(false);
-        resetForm();
-      }, 1500);
     } catch (err) {
-      console.error("Report catch error:", err);
-      setError(err?.message || "An unexpected error occurred");
+      console.error('Report error:', err);
+      setError('An unexpected error occurred: ' + err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleClose = () => {
+    setShowModal(false);
+    setError('');
+    setSuccess(false);
+    setReason('');
+    setDescription('');
+  };
+
+  // Debug: Log props when component renders
+  console.log('ReportButton rendered with:', { itemId, itemTitle });
+
   return (
     <>
-      {/* Button */}
+      {/* Report Button */}
       <button
-        onClick={handleOpen}
+        onClick={() => setShowModal(true)}
         className="btn btn-sm btn-outline-danger"
         title="Report this item"
       >
         🚩 Report
       </button>
 
-      {/* Modal */}
+      {/* Bootstrap Modal */}
       {showModal && (
         <>
-          <div className="modal-backdrop fade show" onClick={handleClose} />
+          {/* Modal Backdrop */}
+          <div 
+            className="modal-backdrop fade show" 
+            onClick={handleClose}
+          ></div>
 
-          <div className="modal fade show d-block" tabIndex="-1" role="dialog">
+          {/* Modal */}
+          <div 
+            className="modal fade show d-block" 
+            tabIndex="-1" 
+            role="dialog"
+            style={{ display: 'block' }}
+          >
             <div className="modal-dialog modal-dialog-centered" role="document">
               <div className="modal-content">
+                {/* Modal Header */}
                 <div className="modal-header">
-                  <h5 className="modal-title">Report</h5>
+                  <h5 className="modal-title">Report Item</h5>
                   <button
                     type="button"
                     className="btn-close"
                     onClick={handleClose}
                     aria-label="Close"
-                    disabled={submitting}
-                  />
+                  ></button>
                 </div>
 
+                {/* Modal Body */}
                 <div className="modal-body">
                   {success ? (
                     <div className="text-center py-4">
-                      <div className="mb-3" style={{ fontSize: "3rem" }}>✅</div>
+                      <div className="mb-3" style={{ fontSize: '3rem' }}>✅</div>
                       <h5>Thank you for your report!</h5>
-                      <p className="text-muted mb-0">We’ll review it shortly.</p>
+                      <p className="text-muted">We will review this item shortly.</p>
                     </div>
                   ) : (
                     <form onSubmit={handleSubmit}>
-                      {/* Title */}
+                      {/* Item Title */}
                       <div className="mb-3">
-                        <label className="form-label">Item</label>
-                        <input className="form-control" value={title || ""} disabled />
+                        <label htmlFor="item-title" className="form-label">
+                          Item
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="item-title"
+                          value={itemTitle || 'Unknown Item'}
+                          disabled
+                        />
                       </div>
+
+                      {/* Debug Info (only in development) */}
+                      {process.env.NODE_ENV === 'development' && (
+                        <div className="alert alert-secondary small mb-3">
+                          <strong>Debug:</strong> Item ID: {itemId || 'MISSING'}
+                        </div>
+                      )}
 
                       {/* Reason */}
                       <div className="mb-3">
-                        <label className="form-label">
+                        <label htmlFor="reason" className="form-label">
                           Reason <span className="text-danger">*</span>
                         </label>
                         <select
                           className="form-select"
+                          id="reason"
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
-                          disabled={submitting}
                           required
+                          disabled={submitting}
                         >
                           <option value="">Select a reason</option>
                           {REPORT_REASONS.map((r) => (
@@ -170,35 +198,39 @@ function ReportButton({
 
                       {/* Description */}
                       <div className="mb-3">
-                        <label className="form-label">Additional details (optional)</label>
+                        <label htmlFor="description" className="form-label">
+                          Additional Details (Optional)
+                        </label>
                         <textarea
                           className="form-control"
+                          id="description"
                           rows="3"
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Explain what seems wrong (optional)"
+                          placeholder="Provide more information..."
                           maxLength={500}
                           disabled={submitting}
                         />
-                        <small className="text-muted">
+                        <small className="form-text text-muted">
                           {description.length}/500 characters
                         </small>
                       </div>
 
-                      {/* Error */}
+                      {/* Error Alert */}
                       {error && (
                         <div className="alert alert-danger" role="alert">
                           {error}
                         </div>
                       )}
 
+                      {/* Form Note */}
                       <div className="alert alert-info" role="alert">
                         <small>
-                          Reports are reviewed by moderators. False reports may result in account action.
+                          Reports are reviewed by moderators. False reports may result in account suspension.
                         </small>
                       </div>
 
-                      {/* Buttons */}
+                      {/* Modal Footer Buttons */}
                       <div className="d-flex gap-2">
                         <button
                           type="button"
@@ -208,23 +240,18 @@ function ReportButton({
                         >
                           Cancel
                         </button>
-
                         <button
                           type="submit"
                           className="btn btn-danger flex-fill"
-                          disabled={submitting || !reason}
+                          disabled={submitting || !reason || !itemId}
                         >
                           {submitting ? (
                             <>
-                              <span
-                                className="spinner-border spinner-border-sm me-2"
-                                role="status"
-                                aria-hidden="true"
-                              />
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                               Submitting...
                             </>
                           ) : (
-                            "Submit Report"
+                            'Submit Report'
                           )}
                         </button>
                       </div>
