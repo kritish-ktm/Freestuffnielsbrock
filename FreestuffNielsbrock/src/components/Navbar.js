@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
@@ -7,7 +7,12 @@ function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  
+
+  // ✅ NEW: hide/show on scroll
+  const [isHidden, setIsHidden] = useState(false);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
   const {
     incomingRequests,
     requestUpdates,
@@ -18,6 +23,42 @@ function Navbar() {
     markUpdateAsRead,
     markAllUpdatesAsRead
   } = useNotifications();
+
+  useEffect(() => {
+    lastScrollY.current = window.scrollY || 0;
+
+    const onScroll = () => {
+      const currentY = window.scrollY || 0;
+
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const diff = currentY - lastScrollY.current;
+
+          // small threshold to prevent jitter
+          const THRESHOLD = 8;
+
+          if (Math.abs(diff) > THRESHOLD) {
+            // scrolling down => hide
+            if (diff > 0 && currentY > 80) {
+              setIsHidden(true);
+            }
+            // scrolling up => show
+            if (diff < 0) {
+              setIsHidden(false);
+            }
+            lastScrollY.current = currentY;
+          }
+
+          ticking.current = false;
+        });
+
+        ticking.current = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -48,7 +89,8 @@ function Navbar() {
 
   const getPlaceholderImage = (id) => {
     const colors = ['667eea', '764ba2', 'f093fb', '4facfe', 'fa709a', '43e97b'];
-    const color = colors[id % colors.length];
+    const safeId = Number(id) || 0;
+    const color = colors[safeId % colors.length];
     return `https://via.placeholder.com/50x50/${color}/ffffff?text=Item`;
   };
 
@@ -63,7 +105,15 @@ function Navbar() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
+    <nav
+      className="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm navbar-hide-on-scroll"
+      style={{
+        transform: isHidden ? "translateY(-110%)" : "translateY(0)",
+        transition: "transform 280ms ease",
+        willChange: "transform",
+        zIndex: 1030,
+      }}
+    >
       <div className="container">
         {/* Brand/Logo */}
         <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
@@ -144,7 +194,7 @@ function Navbar() {
                   </Link>
                 </li>
 
-                {/* GREEN Notification - Incoming Requests (People interested in MY items) */}
+                {/* GREEN Notification - Incoming Requests */}
                 <li className="nav-item dropdown ms-2">
                   <button
                     className="nav-link position-relative btn btn-link p-1"
@@ -235,7 +285,7 @@ function Navbar() {
                   </ul>
                 </li>
 
-                {/* RED Notification - Request Updates (Status changes on items I requested) */}
+                {/* RED Notification - Request Updates */}
                 <li className="nav-item dropdown ms-2">
                   <button
                     className="nav-link position-relative btn btn-link p-1"
@@ -531,4 +581,4 @@ function Navbar() {
   );
 }
 
-export default Navbar;
+export default Navbar; 
