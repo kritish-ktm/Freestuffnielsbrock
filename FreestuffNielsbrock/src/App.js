@@ -20,7 +20,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminItems from "./pages/AdminItems";
 import AdminReports from "./pages/AdminReports";
 import AuthCallback from "./pages/AuthCallback";
-import AdminAnalytics from "./pages/AdminAnalytics";  
+import SecurityAnalytics from "./pages/SecurityAnalytics";  
 import Signup from "./pages/Signup";
 import ManageRequests from "./pages/ManageRequests";
 import Requests from "./pages/Requests";
@@ -52,7 +52,7 @@ function App() {
         <Route path="/admin/users" element={<AdminUsers />} /> 
         <Route path="/admin/items" element={<AdminItems />} />
         <Route path="/admin/reports" element={<AdminReports />} />  
-        <Route path="/admin/analytics" element={<AdminAnalytics />} />  
+        <Route path="/admin/security-analytics" element={<SecurityAnalytics />} />  
         <Route path="/auth/callback" element={<AuthCallback />} />  
         <Route path="/signup" element={<Signup />} />
         <Route path="/manage-requests" element={<ManageRequests />} />
