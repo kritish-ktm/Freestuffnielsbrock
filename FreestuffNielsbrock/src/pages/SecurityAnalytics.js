@@ -8,7 +8,9 @@ function SecurityAnalytics() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7'); // days
-  
+
+  const short = (v, n = 8) => String(v || '').substring(0, n);
+
   // Security Metrics State
   const [metrics, setMetrics] = useState({
     totalUsers: 0,
@@ -16,33 +18,32 @@ function SecurityAnalytics() {
     newUsersThisWeek: 0,
     suspiciousAccounts: 0,
     suspendedUsers: 0,
-    
+
     totalReports: 0,
     pendingReports: 0,
     reportedUsers: 0,
     multipleReporters: [],
-    
+
     rateLimitViolations: 0,
     rapidItemPosting: [],
     rapidReporting: [],
-    
+
     accountsWithoutItems: 0,
     accountsWithManyItems: [],
-    
+
     totalComments: 0,
     expiredItems: 0,
     unreadRequests: 0,
-    flaggedContent: []
   });
 
   const [recentActivity, setRecentActivity] = useState([]);
   const [topReportedItems, setTopReportedItems] = useState([]);
   const [suspiciousUsers, setSuspiciousUsers] = useState([]);
 
-  // Check admin access
   useEffect(() => {
     checkAdminAccess();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const checkAdminAccess = async () => {
     if (!user) {
@@ -50,17 +51,23 @@ function SecurityAnalytics() {
       return;
     }
 
-    // Check if user is admin (you can adjust this logic)
-    const { data: profile } = await supabase
+    // ✅ FIX 1: user_profiles uses user_id not id
+    const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
-      .select('*')
-      .eq('id', user.id)
+      .select('email')
+      .eq('user_id', user.id)
       .single();
 
-    // Add your admin check logic here
-    // For now, checking if email contains 'admin' or specific domain
-    const isAdmin = user.email?.includes('admin') || 
-                    user.email?.endsWith('@edu.nielsbrock.dk');
+    // If profile table is missing or blocked by RLS, still allow admin via metadata/email rule
+    if (profileError) {
+      console.warn('Profile fetch warning:', profileError.message);
+    }
+
+    // ✅ Your admin check logic (kept, but safer)
+    const isAdmin =
+      user.user_metadata?.is_admin === true ||
+      user.email?.includes('admin') ||
+      user.email?.endsWith('@edu.nielsbrock.dk');
 
     if (!isAdmin) {
       navigate('/');
@@ -72,176 +79,177 @@ function SecurityAnalytics() {
 
   const fetchSecurityMetrics = async () => {
     setLoading(true);
-    
+
     try {
       const now = new Date();
-      const daysAgo = new Date(now.getTime() - parseInt(timeRange) * 24 * 60 * 60 * 1000);
-      
-      // Fetch all data
-      const [
-        usersData,
-        itemsData,
-        reportsData,
-        requestsData,
-        commentsData
-      ] = await Promise.all([
+      const daysAgo = new Date(now.getTime() - parseInt(timeRange, 10) * 24 * 60 * 60 * 1000);
+
+      const [usersData, itemsData, reportsData, requestsData, commentsData] = await Promise.all([
         supabase.from('user_profiles').select('*'),
         supabase.from('items').select('*'),
-        supabase.from('reports').select('*, items(title, user_id)'),
+        // ✅ FIX 2: remove wrong join (title/user_id doesn't exist)
+        supabase.from('reports').select('*'),
         supabase.from('requests').select('*'),
-        supabase.from('comments').select('*')
+        supabase.from('comments').select('*'),
       ]);
 
-      // Calculate User Metrics
-      const totalUsers = usersData.data?.length || 0;
-      const suspendedUsers = usersData.data?.filter(u => u.is_suspended).length || 0;
-      const today = new Date().toDateString();
+      const users = usersData.data || [];
+      const items = itemsData.data || [];
+      const reports = reportsData.data || [];
+      const requests = requestsData.data || [];
+      const comments = commentsData.data || [];
+
+      // User metrics
+      const totalUsers = users.length;
+      const suspendedUsers = users.filter((u) => u.is_suspended).length;
+
+      const todayStr = new Date().toDateString();
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
-      const newUsersToday = usersData.data?.filter(u => 
-        new Date(u.created_at).toDateString() === today
-      ).length || 0;
-      
-      const newUsersThisWeek = usersData.data?.filter(u => 
-        new Date(u.created_at) > weekAgo
-      ).length || 0;
 
-      // Suspicious Accounts: No items posted, created recently, not suspended
-      const accountsWithoutItems = usersData.data?.filter(u => {
-        const userItems = itemsData.data?.filter(i => i.posted_by === u.user_id);
-        return userItems?.length === 0 && 
-               new Date(u.created_at) > weekAgo &&
-               !u.is_suspended;
-      }).length || 0;
+      const newUsersToday = users.filter((u) => new Date(u.created_at).toDateString() === todayStr).length;
+      const newUsersThisWeek = users.filter((u) => new Date(u.created_at) > weekAgo).length;
 
-      // Users with many items in short time
-      const accountsWithManyItems = usersData.data?.filter(u => !u.is_suspended).map(u => {
-        const userItems = itemsData.data?.filter(i => 
-          i.posted_by === u.user_id && 
-          new Date(i.created_at) > daysAgo
-        ) || [];
-        
-        return {
-          email: u.email,
-          name: u.full_name,
-          itemCount: userItems.length,
-          userId: u.user_id
-        };
-      }).filter(u => u.itemCount > 8).sort((a, b) => b.itemCount - a.itemCount) || [];
+      // Suspicious: no items + created recently + not suspended
+      const accountsWithoutItems = users.filter((u) => {
+        const userItems = items.filter((i) => i.posted_by === u.user_id);
+        return userItems.length === 0 && new Date(u.created_at) > weekAgo && !u.is_suspended;
+      }).length;
 
-      // Report Metrics
-      const totalReports = reportsData.data?.length || 0;
-      const pendingReports = reportsData.data?.filter(r => r.status === 'pending').length || 0;
-      
-      // Count unique reported users
-      const reportedUserIds = new Set(reportsData.data?.map(r => {
-        const item = itemsData.data?.find(i => i.id === r.item_id);
-        return item?.posted_by;
-      }).filter(Boolean));
+      // Many items in time range
+      const accountsWithManyItems = users
+        .filter((u) => !u.is_suspended)
+        .map((u) => {
+          const userItems = items.filter(
+            (i) => i.posted_by === u.user_id && new Date(i.created_at) > daysAgo
+          );
+          return {
+            email: u.email,
+            name: u.full_name,
+            itemCount: userItems.length,
+            userId: u.user_id,
+          };
+        })
+        .filter((u) => u.itemCount > 8)
+        .sort((a, b) => b.itemCount - a.itemCount);
+
+      // Reports
+      const totalReports = reports.length;
+      const pendingReports = reports.filter((r) => r.status === 'pending').length;
+
+      // unique reported users (based on item owner)
+      const reportedUserIds = new Set(
+        reports
+          .map((r) => {
+            const item = items.find((i) => i.id === r.item_id);
+            return item?.posted_by;
+          })
+          .filter(Boolean)
+      );
       const reportedUsers = reportedUserIds.size;
 
-      // Items with multiple reports
+      // Top reported items
       const itemReportCount = {};
-      reportsData.data?.forEach(r => {
-        if (r.item_id) {
-          itemReportCount[r.item_id] = (itemReportCount[r.item_id] || 0) + 1;
-        }
+      reports.forEach((r) => {
+        if (r.item_id) itemReportCount[r.item_id] = (itemReportCount[r.item_id] || 0) + 1;
       });
 
       const topReportedItemsList = Object.entries(itemReportCount)
         .filter(([_, count]) => count > 1)
         .map(([itemId, count]) => {
-          const item = itemsData.data?.find(i => i.id === itemId);
+          const item = items.find((i) => i.id === itemId);
           return {
             itemId,
-            title: item?.name || 'Unknown Item',
+            title: item?.name || 'Unknown Item', // ✅ FIX 3: name not title
             reportCount: count,
-            userId: item?.posted_by
+            userId: item?.posted_by,
           };
         })
         .sort((a, b) => b.reportCount - a.reportCount)
         .slice(0, 10);
 
-      // Rapid reporting detection (users reporting many items quickly)
+      // Rapid reporters
       const reporterCount = {};
-      reportsData.data?.filter(r => new Date(r.created_at) > daysAgo).forEach(r => {
-        reporterCount[r.reporter_id] = (reporterCount[r.reporter_id] || 0) + 1;
-      });
+      reports
+        .filter((r) => new Date(r.created_at) > daysAgo)
+        .forEach((r) => {
+          reporterCount[r.reporter_id] = (reporterCount[r.reporter_id] || 0) + 1;
+        });
 
       const rapidReporters = Object.entries(reporterCount)
         .filter(([_, count]) => count > 4)
         .map(([userId, count]) => {
-          const user = usersData.data?.find(u => u.user_id === userId);
+          const u = users.find((x) => x.user_id === userId);
           return {
-            email: user?.email || 'Unknown',
-            name: user?.full_name || 'Unknown',
+            email: u?.email || 'Unknown',
+            name: u?.full_name || 'Unknown',
             reportCount: count,
-            userId
+            userId,
           };
         })
         .sort((a, b) => b.reportCount - a.reportCount);
 
-      // Total comments
-      const totalComments = commentsData.data?.length || 0;
+      // Comments total (your comments table exists)
+      const totalComments = comments.length;
 
       // Unread requests
-      const unreadRequests = requestsData.data?.filter(r => 
-        !r.read_by_poster || !r.read_by_requester
-      ).length || 0;
+      const unreadRequests = requests.filter((r) => !r.read_by_poster || !r.read_by_requester).length;
 
-      // Expired items
-      const expiredItems = itemsData.data?.filter(i => 
-        new Date(i.expiry_date) < now && i.status === 'active'
-      ).length || 0;
+      // Expired items (expiry_date may be null, handle safely)
+      const expiredItems = items.filter((i) => i.expiry_date && new Date(i.expiry_date) < now && i.status === 'active')
+        .length;
 
-      // Suspicious users (multiple factors)
-      const suspiciousUsersList = usersData.data?.filter(u => !u.is_suspended).map(u => {
-        const userItems = itemsData.data?.filter(i => i.posted_by === u.user_id) || [];
-        const userReports = reportsData.data?.filter(r => {
-          const item = itemsData.data?.find(i => i.id === r.item_id);
-          return item?.posted_by === u.user_id;
-        }) || [];
-        const userRequests = requestsData.data?.filter(r => r.requester_id === u.user_id) || [];
-        const userComments = commentsData.data?.filter(c => c.user_id === u.user_id) || [];
-        
-        const recentItems = userItems.filter(i => new Date(i.created_at) > daysAgo);
-        const suspicionScore = 
-          (recentItems.length > 8 ? 3 : 0) + // Too many items
-          (userReports.length > 2 ? 2 : 0) + // Multiple reports
-          (userItems.length === 0 && new Date(u.created_at) > weekAgo ? 1 : 0) + // No activity
-          (userRequests.length > 15 ? 2 : 0); // Excessive requests
+      // Suspicious users scoring
+      const suspiciousUsersList = users
+        .filter((u) => !u.is_suspended)
+        .map((u) => {
+          const userItems = items.filter((i) => i.posted_by === u.user_id);
+          const userReports = reports.filter((r) => {
+            const item = items.find((i) => i.id === r.item_id);
+            return item?.posted_by === u.user_id;
+          });
+          const userRequests = requests.filter((r) => r.requester_id === u.user_id);
+          const userComments = comments.filter((c) => c.user_id === u.user_id);
 
-        return {
-          email: u.email,
-          name: u.full_name,
-          userId: u.user_id,
-          suspicionScore,
-          itemCount: userItems.length,
-          reportCount: userReports.length,
-          requestCount: userRequests.length,
-          commentCount: userComments.length,
-          accountAge: Math.floor((now - new Date(u.created_at)) / (1000 * 60 * 60 * 24))
-        };
-      }).filter(u => u.suspicionScore > 0)
+          const recentItems = userItems.filter((i) => new Date(i.created_at) > daysAgo);
+
+          const suspicionScore =
+            (recentItems.length > 8 ? 3 : 0) +
+            (userReports.length > 2 ? 2 : 0) +
+            (userItems.length === 0 && new Date(u.created_at) > weekAgo ? 1 : 0) +
+            (userRequests.length > 15 ? 2 : 0);
+
+          return {
+            email: u.email,
+            name: u.full_name,
+            userId: u.user_id,
+            suspicionScore,
+            itemCount: userItems.length,
+            reportCount: userReports.length,
+            requestCount: userRequests.length,
+            commentCount: userComments.length,
+            accountAge: Math.floor((now - new Date(u.created_at)) / (1000 * 60 * 60 * 24)),
+          };
+        })
+        .filter((u) => u.suspicionScore > 0)
         .sort((a, b) => b.suspicionScore - a.suspicionScore)
-        .slice(0, 10) || [];
+        .slice(0, 10);
 
-      // Recent activity
-      const recentReports = reportsData.data
-        ?.filter(r => new Date(r.created_at) > daysAgo)
+      // Recent activity (reports)
+      const recentReports = reports
+        .filter((r) => new Date(r.created_at) > daysAgo)
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         .slice(0, 10)
-        .map(r => {
-          const reporter = usersData.data?.find(u => u.user_id === r.reporter_id);
-          const item = itemsData.data?.find(i => i.id === r.item_id);
+        .map((r) => {
+          const reporter = users.find((u) => u.user_id === r.reporter_id);
+          const item = items.find((i) => i.id === r.item_id);
           return {
             type: 'report',
             description: `${reporter?.email || 'User'} reported: ${item?.name || 'item'}`,
-            reason: r.reason,
+            reason: r.reason || 'unknown',
             time: new Date(r.created_at).toLocaleString(),
-            status: r.status
+            status: r.status || 'pending',
           };
-        }) || [];
+        });
 
       setMetrics({
         totalUsers,
@@ -249,28 +257,27 @@ function SecurityAnalytics() {
         newUsersThisWeek,
         suspiciousAccounts: suspiciousUsersList.length,
         suspendedUsers,
-        
+
         totalReports,
         pendingReports,
         reportedUsers,
         multipleReporters: rapidReporters,
-        
+
         rateLimitViolations: accountsWithManyItems.length + rapidReporters.length,
         rapidItemPosting: accountsWithManyItems,
         rapidReporting: rapidReporters,
-        
+
         accountsWithoutItems,
         accountsWithManyItems,
-        
+
         totalComments,
         expiredItems,
-        unreadRequests
+        unreadRequests,
       });
 
       setTopReportedItems(topReportedItemsList);
       setSuspiciousUsers(suspiciousUsersList);
       setRecentActivity(recentReports);
-
     } catch (error) {
       console.error('Error fetching security metrics:', error);
     } finally {
@@ -285,6 +292,7 @@ function SecurityAnalytics() {
   };
 
   const exportToCSV = () => {
+    const safeTotalUsers = metrics.totalUsers || 1;
     const csvContent = [
       ['Security Analytics Report', `Generated: ${new Date().toLocaleString()}`],
       [''],
@@ -297,11 +305,15 @@ function SecurityAnalytics() {
       ['Pending Reports', metrics.pendingReports],
       ['Rate Limit Violations', metrics.rateLimitViolations],
       ['Expired Items', metrics.expiredItems],
+      ['Total Comments', metrics.totalComments],
+      ['Activity Score', Math.round(((metrics.totalComments + metrics.totalReports) / safeTotalUsers) * 10) / 10],
       [''],
       ['Suspicious Users'],
       ['Email', 'Name', 'Suspicion Score', 'Items', 'Reports', 'Requests'],
-      ...suspiciousUsers.map(u => [u.email, u.name, u.suspicionScore, u.itemCount, u.reportCount, u.requestCount])
-    ].map(row => row.join(',')).join('\n');
+      ...suspiciousUsers.map((u) => [u.email, u.name, u.suspicionScore, u.itemCount, u.reportCount, u.requestCount]),
+    ]
+      .map((row) => row.join(','))
+      .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -326,9 +338,9 @@ function SecurityAnalytics() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h3">🔒 Security Analytics</h1>
         <div className="d-flex gap-2">
-          <select 
-            className="form-select" 
-            value={timeRange} 
+          <select
+            className="form-select"
+            value={timeRange}
             onChange={(e) => {
               setTimeRange(e.target.value);
               setTimeout(() => fetchSecurityMetrics(), 100);
@@ -428,7 +440,11 @@ function SecurityAnalytics() {
           <div className="card border-success">
             <div className="card-body">
               <h6 className="text-success mb-2">📊 Activity Score</h6>
-              <h2 className="mb-0">{Math.round((metrics.totalComments + metrics.totalReports) / metrics.totalUsers * 10) / 10}</h2>
+              <h2 className="mb-0">
+                {metrics.totalUsers
+                  ? Math.round(((metrics.totalComments + metrics.totalReports) / metrics.totalUsers) * 10) / 10
+                  : 0}
+              </h2>
               <small className="text-muted">Per user average</small>
             </div>
           </div>
@@ -470,9 +486,7 @@ function SecurityAnalytics() {
         </div>
         <div className="card-body">
           {suspiciousUsers.length === 0 ? (
-            <div className="text-center text-muted py-4">
-              ✅ No suspicious activity detected
-            </div>
+            <div className="text-center text-muted py-4">✅ No suspicious activity detected</div>
           ) : (
             <div className="table-responsive">
               <table className="table table-hover">
@@ -507,9 +521,7 @@ function SecurityAnalytics() {
                       <td>{u.commentCount}</td>
                       <td>{u.accountAge} days</td>
                       <td>
-                        <button className="btn btn-sm btn-outline-primary">
-                          Investigate
-                        </button>
+                        <button className="btn btn-sm btn-outline-primary">Investigate</button>
                       </td>
                     </tr>
                   ))}
@@ -544,11 +556,11 @@ function SecurityAnalytics() {
                       <td>
                         <span className="badge bg-danger">{item.reportCount} reports</span>
                       </td>
-                      <td><small className="text-muted">{item.itemId.substring(0, 8)}...</small></td>
                       <td>
-                        <button className="btn btn-sm btn-danger">
-                          Review Reports
-                        </button>
+                        <small className="text-muted">{short(item.itemId)}...</small>
+                      </td>
+                      <td>
+                        <button className="btn btn-sm btn-danger">Review Reports</button>
                       </td>
                     </tr>
                   ))}
@@ -627,7 +639,7 @@ function SecurityAnalytics() {
                       <strong>{activity.description}</strong>
                       <br />
                       <small className="text-muted">
-                        Reason: {activity.reason.replace('_', ' ')}
+                        Reason: {String(activity.reason || 'unknown').replace('_', ' ')}
                       </small>
                     </div>
                     <div className="text-end">
