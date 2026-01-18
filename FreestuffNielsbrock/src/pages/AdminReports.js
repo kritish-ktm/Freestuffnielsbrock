@@ -4,20 +4,27 @@ import { supabase } from "../supabase";
 
 function AdminReports() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const [filterStatus, setFilterStatus] = useState("pending");
-  const location = useLocation();
+
   // ✅ Safe helper (prevents substring crash)
   const short = (v, n = 8) => String(v || "").substring(0, n);
 
   useEffect(() => {
     checkAdminAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ✅ refetch when status OR URL (?item=) changes
+  useEffect(() => {
     fetchReports();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus]);
+  }, [filterStatus, location.search]);
 
   const checkAdminAccess = async () => {
     try {
@@ -45,13 +52,13 @@ function AdminReports() {
       if (filterStatus !== "all") {
         query = query.eq("status", filterStatus);
       }
+
+      // ✅ filter by item if present
       const params = new URLSearchParams(location.search);
-const itemId = params.get("item");
-
-if (itemId) {
-  query = query.eq("item_id", itemId);
-}
-
+      const itemId = params.get("item");
+      if (itemId) {
+        query = query.eq("item_id", itemId);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -110,14 +117,6 @@ if (itemId) {
     return badges[status] || "bg-secondary";
   };
 
-  const getTypeBadge = (type) => {
-    const badges = {
-      user: "bg-danger",
-      item: "bg-warning",
-    };
-    return badges[type] || "bg-secondary";
-  };
-
   if (loading) {
     return (
       <div className="d-flex align-items-center justify-content-center min-vh-100">
@@ -153,7 +152,7 @@ if (itemId) {
         <div className="card shadow-sm border-0 mb-4">
           <div className="card-body p-4">
             <h4 className="fw-bold mb-3" style={{ color: "#003087" }}>
-              <i className="bi bi-file-earmark-text me-2"></i>User & Item Reports
+              <i className="bi bi-file-earmark-text me-2"></i>Item Reports
             </h4>
 
             <div className="btn-group" role="group">
@@ -197,9 +196,10 @@ if (itemId) {
             <thead className="table-light">
               <tr style={{ borderTop: "2px solid #dee2e6" }}>
                 <th>Report ID</th>
-                <th>Type</th>
-                <th>Item ID / Reported ID</th>
+                <th>Item ID</th>
+                <th>Reporter</th>
                 <th>Reason</th>
+                <th>Description</th>
                 <th>Status</th>
                 <th>Date</th>
                 <th>Actions</th>
@@ -208,71 +208,81 @@ if (itemId) {
 
             <tbody>
               {reports.length > 0 ? (
-                reports.map((report) => {
-                  // ✅ supports both schemas:
-                  const targetId = report.item_id || report.reported_id || "";
+                reports.map((report) => (
+                  <tr key={report.id}>
+                    <td className="fw-bold">{short(report.id)}...</td>
 
-                  return (
-                    <tr key={report.id}>
-                      <td className="fw-bold">{short(report.id)}...</td>
+                    <td>
+                      {report.item_id ? (
+                        <span className="text-muted">{short(report.item_id)}...</span>
+                      ) : (
+                        <span className="text-muted">N/A</span>
+                      )}
+                    </td>
 
-                      <td>
-                        <span className={`badge ${getTypeBadge(report.report_type || "item")}`}>
-                          {report.report_type || "item"}
-                        </span>
-                      </td>
+                    <td>
+                      <div className="d-flex flex-column">
+                        <span className="fw-semibold">{report.reporter_email || "Unknown"}</span>
+                        <small className="text-muted">{report.reporter_id ? short(report.reporter_id) + "..." : ""}</small>
+                      </div>
+                    </td>
 
-                      <td>{targetId ? `${short(targetId)}...` : <span className="text-muted">N/A</span>}</td>
+                    <td>{report.reason || <span className="text-muted">N/A</span>}</td>
 
-                      <td>{report.reason || <span className="text-muted">N/A</span>}</td>
+                    <td style={{ maxWidth: 260 }}>
+                      {report.description ? (
+                        <span>{String(report.description).substring(0, 80)}{String(report.description).length > 80 ? "..." : ""}</span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
 
-                      <td>
-                        <span className={`badge ${getStatusBadge(report.status)}`}>
-                          {report.status || "pending"}
-                        </span>
-                      </td>
+                    <td>
+                      <span className={`badge ${getStatusBadge(report.status)}`}>
+                        {report.status || "pending"}
+                      </span>
+                    </td>
 
-                      <td>
-                        {report.created_at ? (
-                          new Date(report.created_at).toLocaleDateString()
-                        ) : (
-                          <span className="text-muted">N/A</span>
-                        )}
-                      </td>
+                    <td>
+                      {report.created_at ? (
+                        new Date(report.created_at).toLocaleDateString()
+                      ) : (
+                        <span className="text-muted">N/A</span>
+                      )}
+                    </td>
 
-                      <td>
-                        <div className="btn-group btn-group-sm">
-                          <button
-                            className="btn btn-outline-info"
-                            onClick={() => handleUpdateStatus(report.id, "reviewed")}
-                            disabled={report.status === "reviewed"}
-                            title="Mark as reviewed"
-                          >
-                            <i className="bi bi-eye"></i>
-                          </button>
-                          <button
-                            className="btn btn-outline-success"
-                            onClick={() => handleUpdateStatus(report.id, "resolved")}
-                            disabled={report.status === "resolved"}
-                            title="Mark as resolved"
-                          >
-                            <i className="bi bi-check-circle"></i>
-                          </button>
-                          <button
-                            className="btn btn-outline-danger"
-                            onClick={() => handleDeleteReport(report.id)}
-                            title="Delete report"
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                    <td>
+                      <div className="btn-group btn-group-sm">
+                        <button
+                          className="btn btn-outline-info"
+                          onClick={() => handleUpdateStatus(report.id, "reviewed")}
+                          disabled={report.status === "reviewed"}
+                          title="Mark as reviewed"
+                        >
+                          <i className="bi bi-eye"></i>
+                        </button>
+                        <button
+                          className="btn btn-outline-success"
+                          onClick={() => handleUpdateStatus(report.id, "resolved")}
+                          disabled={report.status === "resolved"}
+                          title="Mark as resolved"
+                        >
+                          <i className="bi bi-check-circle"></i>
+                        </button>
+                        <button
+                          className="btn btn-outline-danger"
+                          onClick={() => handleDeleteReport(report.id)}
+                          title="Delete report"
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center text-muted py-4">
+                  <td colSpan="8" className="text-center text-muted py-4">
                     No reports found
                   </td>
                 </tr>

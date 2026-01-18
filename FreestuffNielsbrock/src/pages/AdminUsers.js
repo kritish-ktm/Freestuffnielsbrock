@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabase";
 
 function AdminUsers() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -13,6 +15,13 @@ function AdminUsers() {
   useEffect(() => {
     checkAdminAccess();
     fetchUsers();
+
+    // ✅ support /admin/users?search=
+    const params = new URLSearchParams(location.search);
+    const search = params.get("search");
+    if (search) setSearchTerm(search);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAdminAccess = async () => {
@@ -29,8 +38,7 @@ function AdminUsers() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
-      // Fetch users from a users table (you'll need to create this)
+
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
@@ -194,7 +202,11 @@ function AdminUsers() {
                     <td>
                       <button
                         className={`btn btn-sm me-2 ${user.is_suspended ? "btn-success" : "btn-warning"}`}
-                        onClick={() => user.is_suspended ? handleUnsuspendUser(user.user_id) : handleSuspendUser(user.user_id)}
+                        onClick={() =>
+                          user.is_suspended
+                            ? handleUnsuspendUser(user.user_id)
+                            : handleSuspendUser(user.user_id)
+                        }
                         title={user.is_suspended ? "Unsuspend user" : "Suspend user"}
                       >
                         <i className={`bi ${user.is_suspended ? "bi-arrow-counterclockwise" : "bi-pause-circle"}`}></i>
