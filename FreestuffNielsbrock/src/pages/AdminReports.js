@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabase";
 
 function AdminReports() {
@@ -9,7 +9,7 @@ function AdminReports() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const [filterStatus, setFilterStatus] = useState("pending");
-
+  const location = useLocation();
   // ✅ Safe helper (prevents substring crash)
   const short = (v, n = 8) => String(v || "").substring(0, n);
 
@@ -45,6 +45,13 @@ function AdminReports() {
       if (filterStatus !== "all") {
         query = query.eq("status", filterStatus);
       }
+      const params = new URLSearchParams(location.search);
+const itemId = params.get("item");
+
+if (itemId) {
+  query = query.eq("item_id", itemId);
+}
+
 
       const { data, error } = await query;
       if (error) throw error;
