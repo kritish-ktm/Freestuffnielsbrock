@@ -521,7 +521,15 @@ function SecurityAnalytics() {
                       <td>{u.commentCount}</td>
                       <td>{u.accountAge} days</td>
                       <td>
-                        <button className="btn btn-sm btn-outline-primary">Investigate</button>
+                        <button
+  type="button"
+  className="btn btn-sm btn-outline-primary"
+  onClick={() => navigate(`/admin/users?search=${encodeURIComponent(u.email || "")}`)}
+>
+  Investigate
+</button>
+
+
                       </td>
                     </tr>
                   ))}
@@ -560,7 +568,15 @@ function SecurityAnalytics() {
                         <small className="text-muted">{short(item.itemId)}...</small>
                       </td>
                       <td>
-                        <button className="btn btn-sm btn-danger">Review Reports</button>
+                        <button
+  type="button"
+  className="btn btn-sm btn-danger"
+  onClick={() => navigate(`/admin/reports?item=${encodeURIComponent(item.itemId || "")}`)}
+>
+  Review Reports
+</button>
+
+
                       </td>
                     </tr>
                   ))}
