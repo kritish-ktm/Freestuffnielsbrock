@@ -300,7 +300,7 @@ function AdminDashboard() {
                 <p className="text-muted mb-3">View detailed platform analytics and user behavior data.</p>
                 <button
                   className="btn btn-primary w-100"
-                  onClick={() => navigate("/admin/analytics")}
+                  onClick={() => navigate("/admin/security-analytics")}
                 >
                   <i className="bi bi-bar-chart me-2"></i>View Analytics
                 </button>
