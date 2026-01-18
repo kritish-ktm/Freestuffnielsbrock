@@ -52,7 +52,7 @@ function SecurityAnalytics() {
 
     // Check if user is admin (you can adjust this logic)
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('*')
       .eq('id', user.id)
       .single();
