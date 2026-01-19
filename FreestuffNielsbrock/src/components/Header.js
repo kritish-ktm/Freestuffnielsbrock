@@ -7,49 +7,45 @@ function Header() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    let width = canvas.width = canvas.offsetWidth;
-    let height = canvas.height = canvas.offsetHeight;
+    let width = (canvas.width = canvas.offsetWidth);
+    let height = (canvas.height = canvas.offsetHeight);
 
     const NUM_DOTS = 80;
     const dots = [];
 
-
- // Initialize particles (professional small white dots)
-for (let i = 0; i < NUM_DOTS; i++) {
-  dots.push({
-    x: Math.random() * width,
-    y: Math.random() * height,
-    radius: 1 + Math.random() * 2, // even smaller for subtlety
-    angle: Math.random() * Math.PI * 2,
-    speed: 0.2 + Math.random() * 0.8, // slower, smoother motion
-    jaggedness: 0.5 + Math.random() * 0.5, // very subtle jagged edges
-  });
-}
-
-
+    // Initialize particles (professional small white dots)
+    for (let i = 0; i < NUM_DOTS; i++) {
+      dots.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: 1 + Math.random() * 2,
+        angle: Math.random() * Math.PI * 2,
+        speed: 0.2 + Math.random() * 0.8,
+        jaggedness: 0.5 + Math.random() * 0.5,
+      });
+    }
 
     function drawDot(dot) {
-  ctx.beginPath();
-  const spikes = 6 + Math.floor(Math.random() * 3);
-  const step = (Math.PI * 2) / spikes;
-  for (let i = 0; i < spikes; i++) {
-    const r = dot.radius + (Math.random() * dot.jaggedness - dot.jaggedness / 2);
-    const x = dot.x + r * Math.cos(i * step);
-    const y = dot.y + r * Math.sin(i * step);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.closePath();
-  ctx.fillStyle = "rgba(255, 255, 255, 0.9)"; // true white
-  ctx.fill();
-}
-
+      ctx.beginPath();
+      const spikes = 6 + Math.floor(Math.random() * 3);
+      const step = (Math.PI * 2) / spikes;
+      for (let i = 0; i < spikes; i++) {
+        const r = dot.radius + (Math.random() * dot.jaggedness - dot.jaggedness / 2);
+        const x = dot.x + r * Math.cos(i * step);
+        const y = dot.y + r * Math.sin(i * step);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.fill();
+    }
 
     let animationId;
     function animate() {
       ctx.clearRect(0, 0, width, height);
 
-      dots.forEach(dot => {
+      dots.forEach((dot) => {
         drawDot(dot);
 
         dot.x += Math.cos(dot.angle) * dot.speed;
@@ -78,6 +74,12 @@ for (let i = 0; i < NUM_DOTS; i++) {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  // Optional: word-by-word reveal (same sentence, just split into spans)
+  const titleWords = "Free Stuff Marketplace".split(" ");
+  const line1Words = "Give away items you don't need.".split(" ");
+  const line2Words = "Find treasures others are sharing.".split(" ");
+  const line3Words = "100% free for Niels Brock students!".split(" ");
 
   return (
     <header className="hero-section">
@@ -125,22 +127,65 @@ for (let i = 0; i < NUM_DOTS; i++) {
 
       <div className="hero-overlay">
         <div className="container text-center text-white py-5 position-relative" style={{ zIndex: 2 }}>
-          <h1 className="display-3 fw-bold mb-3 position-relative">
-            Free Stuff Marketplace
+          {/* Title (word-by-word pop) */}
+          <h1 className="display-3 fw-bold mb-3 position-relative hero-title">
+            {titleWords.map((w, i) => (
+              <span
+                key={i}
+                className="hero-word"
+                style={{ animationDelay: `${90 + i * 80}ms` }}
+              >
+                {w}&nbsp;
+              </span>
+            ))}
           </h1>
 
-          <p className="lead mb-4 position-relative">
-            Give away items you don't need. Find treasures others are sharing.
+          {/* Paragraph (line-by-line + word pop) */}
+          <p className="lead mb-4 position-relative hero-subtitle">
+            <span className="hero-line">
+              {line1Words.map((w, i) => (
+                <span
+                  key={`l1-${i}`}
+                  className="hero-word"
+                  style={{ animationDelay: `${380 + i * 35}ms` }}
+                >
+                  {w}&nbsp;
+                </span>
+              ))}
+            </span>
             <br />
-            100% free for Niels Brock students!
+            <span className="hero-line">
+              {line2Words.map((w, i) => (
+                <span
+                  key={`l2-${i}`}
+                  className="hero-word"
+                  style={{ animationDelay: `${580 + i * 35}ms` }}
+                >
+                  {w}&nbsp;
+                </span>
+              ))}
+            </span>
+            <br />
+            <span className="hero-line">
+              {line3Words.map((w, i) => (
+                <span
+                  key={`l3-${i}`}
+                  className="hero-word"
+                  style={{ animationDelay: `${760 + i * 35}ms` }}
+                >
+                  {w}&nbsp;
+                </span>
+              ))}
+            </span>
           </p>
 
-          <div className="d-flex gap-3 justify-content-center flex-wrap position-relative">
-            <Link to="/products" className="btn btn-light btn-lg px-4">
+          {/* Buttons (pop in + subtle float) */}
+          <div className="d-flex gap-3 justify-content-center flex-wrap position-relative hero-buttons">
+            <Link to="/products" className="btn btn-light btn-lg px-4 hero-btn hero-btn-1">
               <i className="bi bi-shop me-2"></i>
               Browse Items
             </Link>
-            <Link to="/post" className="btn btn-success btn-lg px-3">
+            <Link to="/post" className="btn btn-success btn-lg px-3 hero-btn hero-btn-2">
               <i className="bi bi-plus-circle me-2"></i>
               Post an Item
             </Link>
@@ -228,10 +273,109 @@ for (let i = 0; i < NUM_DOTS; i++) {
           50% { transform: rotateZ(3deg); }
         }
 
+        /* ---------------- TEXT ANIMATIONS (ONLY) ---------------- */
+
+        /* Smooth intro for title wrapper */
+        .hero-title {
+          will-change: transform, opacity;
+        }
+
+        /* Each word pops up */
+        .hero-word {
+          display: inline-block;
+          opacity: 0;
+          transform: translateY(18px) scale(0.98);
+          animation: wordPop 650ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          will-change: transform, opacity;
+        }
+
+        @keyframes wordPop {
+          0% {
+            opacity: 0;
+            transform: translateY(18px) scale(0.98);
+            filter: blur(2px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+          }
+        }
+
+        /* Subtitle overall fade (keeps it cohesive) */
+        .hero-subtitle {
+          opacity: 0;
+          transform: translateY(10px);
+          animation: blockFadeUp 700ms ease-out 320ms forwards;
+          will-change: transform, opacity;
+        }
+
+        @keyframes blockFadeUp {
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Buttons pop in (after text) */
+        .hero-buttons {
+          opacity: 0;
+          transform: translateY(12px);
+          animation: blockFadeUp 650ms ease-out 920ms forwards;
+          will-change: transform, opacity;
+        }
+
+        /* Subtle float (professional, not janky) */
+        .hero-btn {
+          position: relative;
+          transition: transform 220ms ease, box-shadow 220ms ease;
+          will-change: transform;
+        }
+
+        .hero-btn:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
+        }
+
+        /* Tiny float only after load */
+        .hero-btn-1 {
+          animation: btnFloat 2.8s ease-in-out 1.4s infinite;
+        }
+        .hero-btn-2 {
+          animation: btnFloat 3.2s ease-in-out 1.4s infinite;
+        }
+
+        @keyframes btnFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+
         @media (max-width: 768px) {
           .hero-section { min-height: 400px; }
           .hero-section h1 { font-size: 2rem; }
           .graphic-item { font-size: 2.5rem; width: 60px; height: 60px; }
+
+          /* Reduce motion a bit on mobile */
+          .hero-word {
+            animation-duration: 560ms;
+          }
+          .hero-btn-1, .hero-btn-2 {
+            animation: none;
+          }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          .hero-word,
+          .hero-subtitle,
+          .hero-buttons,
+          .hero-btn-1,
+          .hero-btn-2 {
+            animation: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+            filter: none !important;
+          }
         }
       `}</style>
     </header>
