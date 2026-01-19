@@ -7,49 +7,45 @@ function Header() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    let width = canvas.width = canvas.offsetWidth;
-    let height = canvas.height = canvas.offsetHeight;
+    let width = (canvas.width = canvas.offsetWidth);
+    let height = (canvas.height = canvas.offsetHeight);
 
     const NUM_DOTS = 80;
     const dots = [];
 
-
- // Initialize particles (professional small white dots)
-for (let i = 0; i < NUM_DOTS; i++) {
-  dots.push({
-    x: Math.random() * width,
-    y: Math.random() * height,
-    radius: 1 + Math.random() * 2, // even smaller for subtlety
-    angle: Math.random() * Math.PI * 2,
-    speed: 0.2 + Math.random() * 0.8, // slower, smoother motion
-    jaggedness: 0.5 + Math.random() * 0.5, // very subtle jagged edges
-  });
-}
-
-
+    // Initialize particles (professional small white dots)
+    for (let i = 0; i < NUM_DOTS; i++) {
+      dots.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: 1 + Math.random() * 2,
+        angle: Math.random() * Math.PI * 2,
+        speed: 0.2 + Math.random() * 0.8,
+        jaggedness: 0.5 + Math.random() * 0.5,
+      });
+    }
 
     function drawDot(dot) {
-  ctx.beginPath();
-  const spikes = 6 + Math.floor(Math.random() * 3);
-  const step = (Math.PI * 2) / spikes;
-  for (let i = 0; i < spikes; i++) {
-    const r = dot.radius + (Math.random() * dot.jaggedness - dot.jaggedness / 2);
-    const x = dot.x + r * Math.cos(i * step);
-    const y = dot.y + r * Math.sin(i * step);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.closePath();
-  ctx.fillStyle = "rgba(255, 255, 255, 0.9)"; // true white
-  ctx.fill();
-}
-
+      ctx.beginPath();
+      const spikes = 6 + Math.floor(Math.random() * 3);
+      const step = (Math.PI * 2) / spikes;
+      for (let i = 0; i < spikes; i++) {
+        const r = dot.radius + (Math.random() * dot.jaggedness - dot.jaggedness / 2);
+        const x = dot.x + r * Math.cos(i * step);
+        const y = dot.y + r * Math.sin(i * step);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.fill();
+    }
 
     let animationId;
     function animate() {
       ctx.clearRect(0, 0, width, height);
 
-      dots.forEach(dot => {
+      dots.forEach((dot) => {
         drawDot(dot);
 
         dot.x += Math.cos(dot.angle) * dot.speed;
@@ -125,17 +121,20 @@ for (let i = 0; i < NUM_DOTS; i++) {
 
       <div className="hero-overlay">
         <div className="container text-center text-white py-5 position-relative" style={{ zIndex: 2 }}>
-          <h1 className="display-3 fw-bold mb-3 position-relative">
+          {/* About-like animation: slideDown */}
+          <h1 className="display-3 fw-bold mb-3 position-relative hero-title-anim">
             Free Stuff Marketplace
           </h1>
 
-          <p className="lead mb-4 position-relative">
+          {/* About-like animation: slideDown (slightly later) */}
+          <p className="lead mb-4 position-relative hero-subtitle-anim">
             Give away items you don't need. Find treasures others are sharing.
             <br />
             100% free for Niels Brock students!
           </p>
 
-          <div className="d-flex gap-3 justify-content-center flex-wrap position-relative">
+          {/* About-like animation: fadeInUp (later) */}
+          <div className="d-flex gap-3 justify-content-center flex-wrap position-relative hero-buttons-anim">
             <Link to="/products" className="btn btn-light btn-lg px-4">
               <i className="bi bi-shop me-2"></i>
               Browse Items
@@ -228,10 +227,53 @@ for (let i = 0; i < NUM_DOTS; i++) {
           50% { transform: rotateZ(3deg); }
         }
 
+        /* -------- About-page style animations applied to hero text only -------- */
+        .hero-title-anim {
+          animation: slideDown 0.6s ease-out;
+        }
+
+        .hero-subtitle-anim {
+          animation: slideDown 0.8s ease-out;
+        }
+
+        .hero-buttons-anim {
+          animation: fadeInUp 0.9s ease-out;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         @media (max-width: 768px) {
           .hero-section { min-height: 400px; }
           .hero-section h1 { font-size: 2rem; }
           .graphic-item { font-size: 2.5rem; width: 60px; height: 60px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .hero-title-anim,
+          .hero-subtitle-anim,
+          .hero-buttons-anim {
+            animation: none !important;
+          }
         }
       `}</style>
     </header>
