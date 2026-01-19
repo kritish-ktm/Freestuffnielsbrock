@@ -1,7 +1,33 @@
 // src/pages/About.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
+
+/** Intersection Observer helper: adds "show" once when section enters viewport */
+function useRevealOnce(threshold = 0.22) {
+  const ref = useRef(null);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShow(true);
+          observer.disconnect(); // animate only once
+        }
+      },
+      { threshold }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return { ref, show };
+}
 
 function About() {
   const { user } = useAuth();
@@ -10,7 +36,15 @@ function About() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState({ type: '', text: '' });
+  const [toastMessage, setToastMessage] = useState({ type: "", text: "" });
+
+  // Reveal sections on scroll
+  const story = useRevealOnce(0.2);
+  const sustainability = useRevealOnce(0.2);
+  const newcomers = useRevealOnce(0.2);
+  const community = useRevealOnce(0.2);
+  const commentsSec = useRevealOnce(0.15);
+  const cta = useRevealOnce(0.25);
 
   // Show toast notification
   const showNotification = (type, text) => {
@@ -46,36 +80,36 @@ function About() {
     e.preventDefault();
 
     if (!user) {
-      showNotification('warning', 'Please login to leave a comment');
+      showNotification("warning", "Please login to leave a comment");
       return;
     }
 
     if (!newComment.trim()) {
-      showNotification('warning', 'Please write a comment');
+      showNotification("warning", "Please write a comment");
       return;
     }
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("comments")
-        .insert([{
+      const { error } = await supabase.from("comments").insert([
+        {
           page: "about",
           user_id: user.id,
-          user_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "Anonymous",
+          user_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Anonymous",
           user_email: user.email,
           comment: newComment.trim(),
           created_at: new Date().toISOString(),
-        }]);
+        },
+      ]);
 
       if (error) throw error;
 
       setNewComment("");
       fetchComments();
-      showNotification('success', 'Comment posted successfully!');
+      showNotification("success", "Comment posted successfully!");
     } catch (error) {
       console.error("Error posting comment:", error);
-      showNotification('error', 'Error posting comment: ' + error.message);
+      showNotification("error", "Error posting comment: " + error.message);
     } finally {
       setSubmitting(false);
     }
@@ -84,40 +118,39 @@ function About() {
   return (
     <>
       <div>
-        {/* Hero Section */}
+        {/* Hero Section (keep your current load animation) */}
         <section
           className="py-5 text-center"
           style={{
             background: "linear-gradient(135deg, #003087 0%, #00A9E0 100%)",
             color: "white",
-            animation: 'fadeIn 0.6s ease-in'
+            animation: "fadeIn 0.6s ease-in",
           }}
         >
           <div className="container">
-            <h1 className="display-4 fw-bold mb-3" style={{ animation: 'slideDown 0.6s ease-out' }}>
+            <h1 className="display-4 fw-bold mb-3" style={{ animation: "slideDown 0.6s ease-out" }}>
               About Free Stuff Marketplace
             </h1>
-            <p className="lead" style={{ animation: 'slideDown 0.8s ease-out' }}>
+            <p className="lead" style={{ animation: "slideDown 0.8s ease-out" }}>
               Why this platform was created and its mission
             </p>
           </div>
         </section>
 
-        {/* Our Story Section */}
-        <section className="py-5">
+        {/* Our Story Section (reveal on scroll) */}
+        <section className="py-5" ref={story.ref}>
           <div className="container">
             <div className="row align-items-center g-4">
-              <div className="col-lg-6" style={{ animation: 'slideInLeft 0.8s ease-out' }}>
+              <div className={`col-lg-6 reveal ${story.show ? "show left" : ""}`}>
                 <h2 style={{ color: "#003087" }} className="fw-bold mb-4">
-                  <i className="bi bi-bullseye me-3" style={{ fontSize: '2rem' }}></i>
+                  <i className="bi bi-bullseye me-3" style={{ fontSize: "2rem" }}></i>
                   The Story
                 </h2>
                 <p className="lead text-muted mb-3">
-                  Free Stuff Marketplace is a student-led project born from a simple observation: Niels Brock students have tons of items they no longer need, while others are constantly searching for affordable alternatives.
+                  Free Stuff Marketplace is a student-led project born from a simple observation: Niels Brock students
+                  have tons of items they no longer need, while others are constantly searching for affordable alternatives.
                 </p>
-                <p className="text-muted mb-3">
-                  Creating a community-driven platform solves two problems at once:
-                </p>
+                <p className="text-muted mb-3">Creating a community-driven platform solves two problems at once:</p>
                 <ul className="text-muted">
                   <li className="mb-2">
                     <i className="bi bi-check-circle-fill text-success me-2"></i>
@@ -133,7 +166,8 @@ function About() {
                   </li>
                 </ul>
               </div>
-              <div className="col-lg-6" style={{ animation: 'slideInRight 0.8s ease-out' }}>
+
+              <div className={`col-lg-6 reveal ${story.show ? "show right" : ""}`}>
                 <div
                   style={{
                     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -145,10 +179,10 @@ function About() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    transition: 'transform 0.3s ease',
+                    transition: "transform 0.3s ease",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 >
                   <div>
                     <i className="bi bi-lightbulb-fill" style={{ fontSize: "4rem", marginBottom: "20px" }}></i>
@@ -160,18 +194,25 @@ function About() {
           </div>
         </section>
 
-        {/* Sustainability Section */}
-        <section className="py-5 bg-light">
+        {/* Sustainability Section (reveal on scroll) */}
+        <section className="py-5 bg-light" ref={sustainability.ref}>
           <div className="container">
-            <h2 style={{ color: "#003087", animation: 'fadeIn 1s ease-in' }} className="fw-bold text-center mb-5">
-              <i className="bi bi-recycle me-3" style={{ fontSize: '2.5rem' }}></i>
+            <h2
+              style={{ color: "#003087" }}
+              className={`fw-bold text-center mb-5 reveal ${sustainability.show ? "show" : ""}`}
+            >
+              <i className="bi bi-recycle me-3" style={{ fontSize: "2.5rem" }}></i>
               Sustainability & Environmental Impact
             </h2>
+
             <div className="row g-4">
-              <div className="col-md-4" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
-                <div className="card h-100 border-0 shadow-sm p-4" style={{ transition: 'transform 0.3s ease' }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-10px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+              <div className={`col-md-4 reveal ${sustainability.show ? "show up d1" : ""}`}>
+                <div
+                  className="card h-100 border-0 shadow-sm p-4"
+                  style={{ transition: "transform 0.3s ease" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-10px)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                >
                   <div
                     style={{
                       width: "60px",
@@ -190,14 +231,19 @@ function About() {
                   </div>
                   <h5 className="fw-bold">Reduce Landfill Waste</h5>
                   <p className="text-muted">
-                    Every item shared prevents unnecessary waste in landfills. By giving items a second life, the platform reduces environmental impact.
+                    Every item shared prevents unnecessary waste in landfills. By giving items a second life, the platform
+                    reduces environmental impact.
                   </p>
                 </div>
               </div>
-              <div className="col-md-4" style={{ animation: 'fadeInUp 1s ease-out' }}>
-                <div className="card h-100 border-0 shadow-sm p-4" style={{ transition: 'transform 0.3s ease' }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-10px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+
+              <div className={`col-md-4 reveal ${sustainability.show ? "show up d2" : ""}`}>
+                <div
+                  className="card h-100 border-0 shadow-sm p-4"
+                  style={{ transition: "transform 0.3s ease" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-10px)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                >
                   <div
                     style={{
                       width: "60px",
@@ -216,14 +262,19 @@ function About() {
                   </div>
                   <h5 className="fw-bold">Lower Carbon Footprint</h5>
                   <p className="text-muted">
-                    By promoting reuse over purchasing new items, the website significantly reduces carbon emissions from production and shipping.
+                    By promoting reuse over purchasing new items, the website significantly reduces carbon emissions from
+                    production and shipping.
                   </p>
                 </div>
               </div>
-              <div className="col-md-4" style={{ animation: 'fadeInUp 1.2s ease-out' }}>
-                <div className="card h-100 border-0 shadow-sm p-4" style={{ transition: 'transform 0.3s ease' }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-10px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+
+              <div className={`col-md-4 reveal ${sustainability.show ? "show up d3" : ""}`}>
+                <div
+                  className="card h-100 border-0 shadow-sm p-4"
+                  style={{ transition: "transform 0.3s ease" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-10px)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                >
                   <div
                     style={{
                       width: "60px",
@@ -242,7 +293,8 @@ function About() {
                   </div>
                   <h5 className="fw-bold">Circular Economy</h5>
                   <p className="text-muted">
-                    This platform promotes a circular economy where items keep circulating in the community instead of being discarded.
+                    This platform promotes a circular economy where items keep circulating in the community instead of being
+                    discarded.
                   </p>
                 </div>
               </div>
@@ -250,49 +302,78 @@ function About() {
           </div>
         </section>
 
-        {/* Helping Newcomers Section */}
-        <section className="py-5">
+        {/* Helping Newcomers Section (reveal on scroll) */}
+        <section className="py-5" ref={newcomers.ref}>
           <div className="container">
-            <h2 style={{ color: "#003087", animation: 'fadeIn 1s ease-in' }} className="fw-bold text-center mb-5">
-              <i className="bi bi-hand-thumbs-up-fill me-3" style={{ fontSize: '2.5rem' }}></i>
+            <h2
+              style={{ color: "#003087" }}
+              className={`fw-bold text-center mb-5 reveal ${newcomers.show ? "show" : ""}`}
+            >
+              <i className="bi bi-hand-thumbs-up-fill me-3" style={{ fontSize: "2.5rem" }}></i>
               Helping Newcomers & Students
             </h2>
+
             <div className="row g-4">
-              <div className="col-lg-6" style={{ animation: 'slideInLeft 0.8s ease-out' }}>
-                <div className="card border-0 shadow-sm p-4 h-100" style={{ borderLeft: "5px solid #003087", transition: 'transform 0.3s ease' }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(10px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}>
+              <div className={`col-lg-6 reveal ${newcomers.show ? "show left" : ""}`}>
+                <div
+                  className="card border-0 shadow-sm p-4 h-100"
+                  style={{ borderLeft: "5px solid #003087", transition: "transform 0.3s ease" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(10px)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translateX(0)")}
+                >
                   <h5 className="fw-bold mb-3">
                     <i className="bi bi-person-badge me-2"></i>
                     For New Students
                   </h5>
                   <p className="text-muted mb-3">
-                    Moving to a new city or country is expensive! Free Stuff Marketplace helps newcomers find furniture, electronics, and other essentials without breaking the bank.
+                    Moving to a new city or country is expensive! Free Stuff Marketplace helps newcomers find furniture,
+                    electronics, and other essentials without breaking the bank.
                   </p>
                   <ul className="text-muted">
-                    <li><i className="bi bi-check-circle-fill text-primary me-2"></i>Find affordable furniture for your dorm</li>
-                    <li><i className="bi bi-check-circle-fill text-primary me-2"></i>Get textbooks and study materials</li>
-                    <li><i className="bi bi-check-circle-fill text-primary me-2"></i>Connect with the community</li>
-                    <li><i className="bi bi-check-circle-fill text-primary me-2"></i>Save hundreds of DKK</li>
+                    <li>
+                      <i className="bi bi-check-circle-fill text-primary me-2"></i>Find affordable furniture for your dorm
+                    </li>
+                    <li>
+                      <i className="bi bi-check-circle-fill text-primary me-2"></i>Get textbooks and study materials
+                    </li>
+                    <li>
+                      <i className="bi bi-check-circle-fill text-primary me-2"></i>Connect with the community
+                    </li>
+                    <li>
+                      <i className="bi bi-check-circle-fill text-primary me-2"></i>Save hundreds of DKK
+                    </li>
                   </ul>
                 </div>
               </div>
-              <div className="col-lg-6" style={{ animation: 'slideInRight 0.8s ease-out' }}>
-                <div className="card border-0 shadow-sm p-4 h-100" style={{ borderLeft: "5px solid #00A9E0", transition: 'transform 0.3s ease' }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(10px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}>
+
+              <div className={`col-lg-6 reveal ${newcomers.show ? "show right" : ""}`}>
+                <div
+                  className="card border-0 shadow-sm p-4 h-100"
+                  style={{ borderLeft: "5px solid #00A9E0", transition: "transform 0.3s ease" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(10px)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translateX(0)")}
+                >
                   <h5 className="fw-bold mb-3">
                     <i className="bi bi-piggy-bank me-2"></i>
                     Financial Relief
                   </h5>
                   <p className="text-muted mb-3">
-                    Student life comes with limited budgets. This platform provides access to free and cheap items, allowing students to allocate their resources to education and experiences.
+                    Student life comes with limited budgets. This platform provides access to free and cheap items, allowing
+                    students to allocate their resources to education and experiences.
                   </p>
                   <ul className="text-muted">
-                    <li><i className="bi bi-check-circle-fill text-info me-2"></i>100% free items available</li>
-                    <li><i className="bi bi-check-circle-fill text-info me-2"></i>No shipping costs (local pickup)</li>
-                    <li><i className="bi bi-check-circle-fill text-info me-2"></i>Quality items from fellow students</li>
-                    <li><i className="bi bi-check-circle-fill text-info me-2"></i>Budget-friendly alternative to retail</li>
+                    <li>
+                      <i className="bi bi-check-circle-fill text-info me-2"></i>100% free items available
+                    </li>
+                    <li>
+                      <i className="bi bi-check-circle-fill text-info me-2"></i>No shipping costs (local pickup)
+                    </li>
+                    <li>
+                      <i className="bi bi-check-circle-fill text-info me-2"></i>Quality items from fellow students
+                    </li>
+                    <li>
+                      <i className="bi bi-check-circle-fill text-info me-2"></i>Budget-friendly alternative to retail
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -300,22 +381,25 @@ function About() {
           </div>
         </section>
 
-        {/* Community Section */}
-        <section className="py-5 bg-light">
+        {/* Community Section (reveal on scroll) */}
+        <section className="py-5 bg-light" ref={community.ref}>
           <div className="container">
-            <h2 style={{ color: "#003087", animation: 'fadeIn 1s ease-in' }} className="fw-bold text-center mb-5">
-              <i className="bi bi-people-fill me-3" style={{ fontSize: '2.5rem' }}></i>
+            <h2
+              style={{ color: "#003087" }}
+              className={`fw-bold text-center mb-5 reveal ${community.show ? "show" : ""}`}
+            >
+              <i className="bi bi-people-fill me-3" style={{ fontSize: "2.5rem" }}></i>
               Building a Shared Community
             </h2>
+
             <div className="row g-4 align-items-center">
-              <div className="col-lg-6" style={{ animation: 'slideInLeft 0.8s ease-out' }}>
+              <div className={`col-lg-6 reveal ${community.show ? "show left" : ""}`}>
                 <h4 className="fw-bold mb-3">More Than Just a Marketplace</h4>
                 <p className="text-muted mb-3">
-                  Free Stuff Marketplace is about building relationships and trust within the Niels Brock community. When someone gives away an item, they're not just decluttering—they're helping a fellow student.
+                  Free Stuff Marketplace is about building relationships and trust within the Niels Brock community. When
+                  someone gives away an item, they're not just decluttering—they're helping a fellow student.
                 </p>
-                <p className="text-muted mb-3">
-                  The platform encourages:
-                </p>
+                <p className="text-muted mb-3">The platform encourages:</p>
                 <ul className="text-muted">
                   <li className="mb-2">
                     <i className="bi bi-shield-check text-success me-2"></i>
@@ -335,7 +419,8 @@ function About() {
                   </li>
                 </ul>
               </div>
-              <div className="col-lg-6" style={{ animation: 'slideInRight 0.8s ease-out' }}>
+
+              <div className={`col-lg-6 reveal ${community.show ? "show right" : ""}`}>
                 <div
                   style={{
                     background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
@@ -347,10 +432,10 @@ function About() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    transition: 'transform 0.3s ease',
+                    transition: "transform 0.3s ease",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 >
                   <div>
                     <i className="bi bi-people-fill" style={{ fontSize: "4rem", marginBottom: "20px" }}></i>
@@ -362,17 +447,17 @@ function About() {
           </div>
         </section>
 
-        {/* Comments Section */}
-        <section className="py-5">
-          <div className="container" style={{ maxWidth: "700px", animation: 'fadeIn 1s ease-in' }}>
+        {/* Comments Section (reveal on scroll) */}
+        <section className="py-5" ref={commentsSec.ref}>
+          <div className={`container reveal ${commentsSec.show ? "show" : ""}`} style={{ maxWidth: "700px" }}>
             <h2 style={{ color: "#003087" }} className="fw-bold text-center mb-4">
-              <i className="bi bi-chat-dots-fill me-3" style={{ fontSize: '2rem' }}></i>
+              <i className="bi bi-chat-dots-fill me-3" style={{ fontSize: "2rem" }}></i>
               What the Community Says
             </h2>
 
             {/* Comment Form */}
             {user ? (
-              <div className="card shadow-sm border-0 p-4 mb-5" style={{ animation: 'slideDown 0.6s ease-out' }}>
+              <div className={`card shadow-sm border-0 p-4 mb-5 reveal ${commentsSec.show ? "show up d1" : ""}`}>
                 <h5 className="fw-bold mb-3">
                   <i className="bi bi-pencil-square me-2"></i>
                   Leave Your Comment
@@ -386,16 +471,16 @@ function About() {
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       disabled={submitting}
-                      style={{ transition: 'border-color 0.3s ease' }}
+                      style={{ transition: "border-color 0.3s ease" }}
                     ></textarea>
                   </div>
                   <button
                     type="submit"
                     className="btn btn-primary btn-lg w-100"
                     disabled={submitting}
-                    style={{ transition: 'all 0.3s ease' }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    style={{ transition: "all 0.3s ease" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >
                     {submitting ? (
                       <>
@@ -412,7 +497,7 @@ function About() {
                 </form>
               </div>
             ) : (
-              <div className="alert alert-info text-center mb-5" style={{ animation: 'slideDown 0.6s ease-out' }}>
+              <div className={`alert alert-info text-center mb-5 reveal ${commentsSec.show ? "show up d1" : ""}`}>
                 <i className="bi bi-info-circle-fill me-2"></i>
                 <strong>Login to leave a comment!</strong> Sign in to share your thoughts about the community.
               </div>
@@ -427,27 +512,27 @@ function About() {
 
               {loading ? (
                 <div className="text-center py-5">
-                  <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                  <div className="spinner-border text-primary" role="status" style={{ width: "3rem", height: "3rem" }}>
                     <span className="visually-hidden">Loading...</span>
                   </div>
                   <p className="mt-3 text-muted">Loading comments...</p>
                 </div>
               ) : comments.length === 0 ? (
-                <div className="alert alert-secondary text-center" style={{ animation: 'fadeIn 0.5s ease-in' }}>
+                <div className="alert alert-secondary text-center" style={{ animation: "fadeIn 0.5s ease-in" }}>
                   <i className="bi bi-chat-square-dots me-2"></i>
                   No comments yet. Be the first to share your thoughts!
                 </div>
               ) : (
                 comments.map((comment, index) => (
-                  <div 
-                    key={comment.id} 
-                    className="card border-0 shadow-sm p-4 mb-3"
-                    style={{ 
-                      animation: `fadeInUp 0.5s ease-out ${index * 0.1}s backwards`,
-                      transition: 'transform 0.3s ease'
+                  <div
+                    key={comment.id}
+                    className={`card border-0 shadow-sm p-4 mb-3 reveal ${commentsSec.show ? "show up" : ""}`}
+                    style={{
+                      animationDelay: `${index * 90}ms`,
+                      transition: "transform 0.3s ease",
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(5px)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(5px)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateX(0)")}
                   >
                     <div className="d-flex align-items-start">
                       <div
@@ -483,31 +568,29 @@ function About() {
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* CTA Section (reveal on scroll) */}
         <section
           className="py-5 text-center"
           style={{
             background: "linear-gradient(135deg, #003087 0%, #00A9E0 100%)",
             color: "white",
-            animation: 'fadeIn 1s ease-in'
           }}
+          ref={cta.ref}
         >
-          <div className="container">
+          <div className={`container reveal ${cta.show ? "show" : ""}`}>
             <h2 className="fw-bold mb-3">Join the Movement</h2>
-            <p className="lead mb-4">
-              Be part of a community that cares about sustainability and helping others
-            </p>
-            <a 
-              href="/products" 
+            <p className="lead mb-4">Be part of a community that cares about sustainability and helping others</p>
+            <a
+              href="/products"
               className="btn btn-light btn-lg px-5"
-              style={{ transition: 'all 0.3s ease' }}
+              style={{ transition: "all 0.3s ease" }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.2)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "none";
               }}
             >
               <i className="bi bi-shop me-2"></i>Start Browsing
@@ -516,37 +599,46 @@ function About() {
         </section>
       </div>
 
-      {/* Toast Notification */}
+      {/* Toast Notification (keep your current animation) */}
       {showToast && (
-        <div 
+        <div
           className="position-fixed top-50 start-50 translate-middle"
-          style={{ 
+          style={{
             zIndex: 9999,
-            animation: 'fadeInScale 0.3s ease-out',
-            width: '90%',
-            maxWidth: '400px'
+            animation: "fadeInScale 0.3s ease-out",
+            width: "90%",
+            maxWidth: "400px",
           }}
         >
-          <div 
+          <div
             className={`alert alert-${
-              toastMessage.type === 'success' ? 'success' : 
-              toastMessage.type === 'error' ? 'danger' : 
-              toastMessage.type === 'warning' ? 'warning' : 
-              'info'
+              toastMessage.type === "success"
+                ? "success"
+                : toastMessage.type === "error"
+                ? "danger"
+                : toastMessage.type === "warning"
+                ? "warning"
+                : "info"
             } d-flex align-items-center shadow-lg mb-0`}
             role="alert"
             style={{
-              borderRadius: '10px',
-              border: 'none',
-              padding: '1rem 1.5rem'
+              borderRadius: "10px",
+              border: "none",
+              padding: "1rem 1.5rem",
             }}
           >
-            <i className={`bi ${
-              toastMessage.type === 'success' ? 'bi-check-circle-fill' : 
-              toastMessage.type === 'error' ? 'bi-x-circle-fill' : 
-              toastMessage.type === 'warning' ? 'bi-exclamation-triangle-fill' : 
-              'bi-info-circle-fill'
-            } me-3`} style={{ fontSize: '2rem' }}></i>
+            <i
+              className={`bi ${
+                toastMessage.type === "success"
+                  ? "bi-check-circle-fill"
+                  : toastMessage.type === "error"
+                  ? "bi-x-circle-fill"
+                  : toastMessage.type === "warning"
+                  ? "bi-exclamation-triangle-fill"
+                  : "bi-info-circle-fill"
+              } me-3`}
+              style={{ fontSize: "2rem" }}
+            ></i>
             <div className="flex-grow-1">{toastMessage.text}</div>
           </div>
         </div>
@@ -554,64 +646,60 @@ function About() {
 
       {/* CSS Animations */}
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
+        /* Base animations you already had */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         @keyframes fadeInScale {
-          0% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0.8);
-          }
-          100% {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-          }
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
-        
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
+
         @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        
+
+        /* -------- IntersectionObserver reveal system (About-style) -------- */
+        .reveal {
+          opacity: 0;
+          transform: translateY(28px);
+          will-change: transform, opacity;
+        }
+
+        .reveal.show {
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        /* direction variants (only change transform start) */
+        .reveal.left { transform: translateX(-50px); }
+        .reveal.right { transform: translateX(50px); }
+        .reveal.up { transform: translateY(28px); }
+
+        .reveal.show.left { animation: slideInLeft 0.8s ease-out forwards; }
+        .reveal.show.right { animation: slideInRight 0.8s ease-out forwards; }
+
+        /* stagger helpers */
+        .d1 { animation-delay: 0.15s; }
+        .d2 { animation-delay: 0.35s; }
+        .d3 { animation-delay: 0.55s; }
+
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-50px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(50px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+
         @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(28px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
         }
       `}</style>
     </>
