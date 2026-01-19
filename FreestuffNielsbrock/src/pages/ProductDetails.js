@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { supabase } from "../supabase";
-import ReportButton from "../components/ReportButton"; // ✅ FIX: default import
+import ReportButton from "../components/ReportButton";
 
 function ProductDetails() {
   const { id } = useParams();
@@ -15,6 +15,15 @@ function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [requestStatus, setRequestStatus] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ type: '', text: '' });
+
+  // Show toast notification
+  const showNotification = (type, text) => {
+    setToastMessage({ type, text });
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -57,7 +66,7 @@ function ProductDetails() {
         .select("status")
         .eq("item_id", id)
         .eq("requester_id", user.id)
-        .maybeSingle(); // ✅ better than .single() (no error when not found)
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching request status:", error);
@@ -111,7 +120,7 @@ function ProductDetails() {
         if (deleteError) throw deleteError;
 
         setRequestStatus(null);
-        alert("✅ Request removed successfully!");
+        showNotification('success', 'Request removed successfully!');
       } else {
         addToInterested(product);
 
@@ -129,22 +138,22 @@ function ProductDetails() {
         if (insertError) throw insertError;
 
         setRequestStatus("pending");
-        alert("✅ Interest request sent! Wait for the poster to approve.");
+        showNotification('success', 'Interest request sent! Wait for poster approval.');
       }
     } catch (err) {
       console.error("Error:", err);
-      alert("❌ Error: " + (err?.message || "Something went wrong"));
+      showNotification('error', err?.message || 'Something went wrong');
     }
   };
 
   const handleWhatsAppMessage = () => {
     if (!product?.whatsapp_number) {
-      alert("This poster hasn't provided a WhatsApp number");
+      showNotification('warning', "This poster hasn't provided a WhatsApp number");
       return;
     }
 
     const message =
-      `Hi! I'm interested in your "${product.name}" from Free Stuff Niels Brock! Is it still available? 📦\n` +
+      `Hi! I'm interested in your "${product.name}" from Free Stuff Niels Brock! Is it still available?\n` +
       `Location: ${product.location || "TBD"}\n\nThanks!`;
 
     const whatsappUrl = `https://wa.me/${String(product.whatsapp_number).replace(
@@ -158,20 +167,21 @@ function ProductDetails() {
   if (loading) {
     return (
       <div className="container my-5 text-center">
-        <div className="spinner-border text-primary" role="status">
+        <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p className="mt-3">Loading item details...</p>
+        <p className="mt-3 text-muted">Loading item details...</p>
       </div>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="container my-5 text-center">
+      <div className="container my-5 text-center" style={{ animation: 'fadeIn 0.3s ease-in' }}>
         <i className="bi bi-exclamation-circle" style={{ fontSize: "4rem", color: "#ccc" }} />
         <h3 className="mt-3">{error || "Item not found"}</h3>
         <button className="btn btn-primary mt-3" onClick={() => navigate("/products")}>
+          <i className="bi bi-arrow-left me-2"></i>
           Back to Items
         </button>
       </div>
@@ -179,221 +189,338 @@ function ProductDetails() {
   }
 
   return (
-    <div className="container my-5">
-      <button
-        className="btn btn-link mb-3 text-decoration-none"
-        onClick={() => navigate("/products")}
-        style={{ color: "#003087" }}
-      >
-        <i className="bi bi-arrow-left me-2" />
-        Back to Items
-      </button>
+    <>
+      <div className="container my-5" style={{ animation: 'fadeIn 0.5s ease-in' }}>
+        <button
+          className="btn btn-link mb-3 text-decoration-none"
+          onClick={() => navigate("/products")}
+          style={{ color: "#003087" }}
+        >
+          <i className="bi bi-arrow-left me-2" />
+          Back to Items
+        </button>
 
-      <div className="row">
-        {/* Image */}
-        <div className="col-md-6 mb-4">
-          <div className="card shadow-lg border-0">
-            <img
-              src={product.image || getPlaceholderImage(product.id)}
-              className="card-img-top rounded"
-              alt={product.name}
-              style={{ height: "450px", objectFit: "cover" }}
-              onError={(e) => {
-                e.currentTarget.src = getPlaceholderImage(product.id);
-              }}
-            />
+        <div className="row">
+          {/* Image */}
+          <div className="col-md-6 mb-4" style={{ animation: 'slideInLeft 0.5s ease-out' }}>
+            <div className="card shadow-lg border-0">
+              <img
+                src={product.image || getPlaceholderImage(product.id)}
+                className="card-img-top rounded"
+                alt={product.name}
+                style={{ height: "450px", objectFit: "cover" }}
+                onError={(e) => {
+                  e.currentTarget.src = getPlaceholderImage(product.id);
+                }}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Details */}
-        <div className="col-md-6">
-          <div className="card shadow-lg border-0 p-4">
-            {/* Title with Report Button */}
-            <div className="d-flex justify-content-between align-items-start mb-3">
-              <h1 className="display-6 fw-bold" style={{ color: "#003087" }}>
-                {product.name}
-              </h1>
+          {/* Details */}
+          <div className="col-md-6" style={{ animation: 'slideInRight 0.5s ease-out' }}>
+            <div className="card shadow-lg border-0 p-4">
+              {/* Title with Report Button */}
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <h1 className="display-6 fw-bold" style={{ color: "#003087" }}>
+                  {product.name}
+                </h1>
 
-              {/* ✅ Report Button - show if logged in and not owner */}
-              {user && product.posted_by !== user.id && (
-                <ReportButton itemId={product.id} itemTitle={product.name} />
-              )}
-            </div>
-
-            <div className="mb-3">
-              <span className="h2 text-success fw-bold">
-                {Number(product.price) === 0 ? "FREE" : `${product.price} DKK`}
-              </span>
-              <span className="badge bg-info fs-6 ms-3">{product.category || "General"}</span>
-              {product.condition && (
-                <span className="badge bg-secondary fs-6 ms-2">
-                  Condition: {product.condition}
-                </span>
-              )}
-            </div>
-
-            <p className="lead text-muted mb-4">{product.description}</p>
-
-            {product.location && (
-              <div className="d-flex align-items-center mb-3 text-muted">
-                <i className="bi bi-geo-alt-fill me-2" style={{ color: "#00A9E0" }} />
-                <strong className="me-2">Pickup:</strong> {product.location}
-              </div>
-            )}
-
-            {product.posted_by_name && (
-              <p className="text-muted small mb-2">
-                <i className="bi bi-person-circle me-1" />
-                {product.posted_by === user?.id ? (
-                  <span>{product.posted_by_name}</span>
-                ) : (
-                  <Link
-                    to={`/user/${product.posted_by}`}
-                    className="text-decoration-none"
-                    style={{ color: "#003087", fontWeight: "500" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                    onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-                  >
-                    {product.posted_by_name}
-                  </Link>
+                {user && product.posted_by !== user.id && (
+                  <ReportButton itemId={product.id} itemTitle={product.name} />
                 )}
-              </p>
-            )}
+              </div>
 
-            {product.created_at && (
-              <small className="text-muted">
-                <i className="bi bi-calendar me-2" />
-                Posted: {new Date(product.created_at).toLocaleDateString()}
-              </small>
-            )}
+              <div className="mb-3">
+                <span className="h2 text-success fw-bold">
+                  {Number(product.price) === 0 ? "FREE" : `${product.price} DKK`}
+                </span>
+                <span className="badge bg-info fs-6 ms-3">{product.category || "General"}</span>
+                {product.condition && (
+                  <span className="badge bg-secondary fs-6 ms-2">
+                    Condition: {product.condition}
+                  </span>
+                )}
+              </div>
 
-            <hr className="my-4" />
+              <p className="lead text-muted mb-4">{product.description}</p>
 
-            {/* Action Buttons */}
-            <div className="d-grid gap-3">
-              {user ? (
-                <>
-                  {requestStatus && product.posted_by !== user.id && (
-                    <div
-                      className={`alert ${
-                        requestStatus === "pending"
-                          ? "alert-warning"
-                          : requestStatus === "approved" || requestStatus === "accepted"
-                          ? "alert-success"
-                          : "alert-danger"
-                      } mb-3`}
-                      role="alert"
-                    >
-                      <i
-                        className={`bi ${
-                          requestStatus === "pending"
-                            ? "bi-clock"
-                            : requestStatus === "approved" || requestStatus === "accepted"
-                            ? "bi-check-circle"
-                            : "bi-x-circle"
-                        } me-2`}
-                      />
-                      <strong>
-                        {requestStatus === "pending" && "Request Pending"}
-                        {(requestStatus === "approved" || requestStatus === "accepted") &&
-                          "Request Approved!"}
-                        {requestStatus === "rejected" && "Request Rejected"}
-                      </strong>
-                      <br />
-                      <small>
-                        {requestStatus === "pending" &&
-                          "Waiting for poster approval to contact them."}
-                        {(requestStatus === "approved" || requestStatus === "accepted") &&
-                          "You can now message the poster on WhatsApp!"}
-                        {requestStatus === "rejected" && "The poster declined your request."}
-                      </small>
-                    </div>
-                  )}
-
-                  {canContact() && (
-                    <button
-                      onClick={handleWhatsAppMessage}
-                      className="btn btn-success btn-lg fw-bold shadow"
-                      style={{ backgroundColor: "#25D366", border: "none" }}
-                    >
-                      <i className="bi bi-whatsapp me-2" />
-                      Message on WhatsApp
-                    </button>
-                  )}
-
-                  {product.posted_by !== user.id && (
-                    <button
-                      onClick={handleInterested}
-                      className={`btn btn-lg fw-bold shadow ${
-                        isInterested(product.id) ? "btn-danger" : "btn-outline-primary"
-                      }`}
-                      disabled={requestStatus === "rejected"}
-                    >
-                      <i
-                        className={`bi ${
-                          isInterested(product.id) ? "bi-heart-fill" : "bi-heart"
-                        } me-2`}
-                      />
-                      {isInterested(product.id) ? "Remove Interest Request" : "I'm Interested"}
-                    </button>
-                  )}
-
-                  {!canContact() && product.posted_by !== user.id && !requestStatus && (
-                    <div className="alert alert-info" role="alert">
-                      <i className="bi bi-info-circle me-2" />
-                      <strong>How it works:</strong>
-                      <br />
-                      <small>1. Click "I'm Interested" to send a request</small>
-                      <br />
-                      <small>2. Wait for poster approval</small>
-                      <br />
-                      <small>3. Once approved, you can message them on WhatsApp</small>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="alert alert-info" role="alert">
-                    <i className="bi bi-info-circle me-2" />
-                    <strong>Login required</strong> to express interest and contact posters
-                  </div>
-                  <button
-                    onClick={() => navigate("/login")}
-                    className="btn btn-primary btn-lg fw-bold shadow"
-                  >
-                    <i className="bi bi-door-open me-2" />
-                    Login to Get Started
-                  </button>
-                </>
+              {product.location && (
+                <div className="d-flex align-items-center mb-3 text-muted">
+                  <i className="bi bi-geo-alt-fill me-2" style={{ color: "#00A9E0" }} />
+                  <strong className="me-2">Pickup:</strong> {product.location}
+                </div>
               )}
 
-              <button onClick={() => navigate("/products")} className="btn btn-outline-secondary">
-                Back to Items
-              </button>
-            </div>
+              {product.posted_by_name && (
+                <p className="text-muted small mb-2">
+                  <i className="bi bi-person-circle me-1" />
+                  {product.posted_by === user?.id ? (
+                    <span>{product.posted_by_name}</span>
+                  ) : (
+                    <Link
+                      to={`/user/${product.posted_by}`}
+                      className="text-decoration-none"
+                      style={{ color: "#003087", fontWeight: "500" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                      onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                    >
+                      {product.posted_by_name}
+                    </Link>
+                  )}
+                </p>
+              )}
 
-            <div className="mt-4 p-3 bg-light rounded border-start border-primary border-4">
-              <small className="text-muted">
-                <i className="bi bi-shield-check me-2" style={{ color: "#003087" }} />
-                <strong>Safety Tip:</strong> Always meet in public areas on campus (library, canteen,
-                etc.)
-              </small>
+              {product.created_at && (
+                <small className="text-muted">
+                  <i className="bi bi-calendar me-2" />
+                  Posted: {new Date(product.created_at).toLocaleDateString()}
+                </small>
+              )}
+
+              <hr className="my-4" />
+
+              {/* Action Buttons */}
+              <div className="d-grid gap-3">
+                {user ? (
+                  <>
+                    {requestStatus && product.posted_by !== user.id && (
+                      <div
+                        className={`alert ${
+                          requestStatus === "pending"
+                            ? "alert-warning"
+                            : requestStatus === "approved" || requestStatus === "accepted"
+                            ? "alert-success"
+                            : "alert-danger"
+                        } mb-3`}
+                        role="alert"
+                        style={{ animation: 'slideDown 0.3s ease-out' }}
+                      >
+                        <i
+                          className={`bi ${
+                            requestStatus === "pending"
+                              ? "bi-clock-history"
+                              : requestStatus === "approved" || requestStatus === "accepted"
+                              ? "bi-check-circle-fill"
+                              : "bi-x-circle-fill"
+                          } me-2`}
+                        />
+                        <strong>
+                          {requestStatus === "pending" && "Request Pending"}
+                          {(requestStatus === "approved" || requestStatus === "accepted") &&
+                            "Request Approved!"}
+                          {requestStatus === "rejected" && "Request Rejected"}
+                        </strong>
+                        <br />
+                        <small>
+                          {requestStatus === "pending" &&
+                            "Waiting for poster approval to contact them."}
+                          {(requestStatus === "approved" || requestStatus === "accepted") &&
+                            "You can now message the poster on WhatsApp!"}
+                          {requestStatus === "rejected" && "The poster declined your request."}
+                        </small>
+                      </div>
+                    )}
+
+                    {canContact() && (
+                      <button
+                        onClick={handleWhatsAppMessage}
+                        className="btn btn-success btn-lg fw-bold shadow"
+                        style={{ 
+                          backgroundColor: "#25D366", 
+                          border: "none",
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        <i className="bi bi-whatsapp me-2" />
+                        Message on WhatsApp
+                      </button>
+                    )}
+
+                    {product.posted_by !== user.id && (
+                      <button
+                        onClick={handleInterested}
+                        className={`btn btn-lg fw-bold shadow ${
+                          isInterested(product.id) ? "btn-danger" : "btn-outline-primary"
+                        }`}
+                        disabled={requestStatus === "rejected"}
+                        style={{ transition: 'all 0.3s ease' }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        <i
+                          className={`bi ${
+                            isInterested(product.id) ? "bi-heart-fill" : "bi-heart"
+                          } me-2`}
+                        />
+                        {isInterested(product.id) ? "Remove Interest Request" : "I'm Interested"}
+                      </button>
+                    )}
+
+                    {!canContact() && product.posted_by !== user.id && !requestStatus && (
+                      <div className="alert alert-info" role="alert" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                        <i className="bi bi-info-circle-fill me-2" />
+                        <strong>How it works:</strong>
+                        <br />
+                        <small>1. Click "I'm Interested" to send a request</small>
+                        <br />
+                        <small>2. Wait for poster approval</small>
+                        <br />
+                        <small>3. Once approved, you can message them on WhatsApp</small>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="alert alert-info" role="alert" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                      <i className="bi bi-info-circle-fill me-2" />
+                      <strong>Login required</strong> to express interest and contact posters
+                    </div>
+                    <button
+                      onClick={() => navigate("/login")}
+                      className="btn btn-primary btn-lg fw-bold shadow"
+                      style={{ transition: 'all 0.3s ease' }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <i className="bi bi-door-open me-2" />
+                      Login to Get Started
+                    </button>
+                  </>
+                )}
+
+                <button 
+                  onClick={() => navigate("/products")} 
+                  className="btn btn-outline-secondary"
+                  style={{ transition: 'all 0.3s ease' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  Back to Items
+                </button>
+              </div>
+
+              <div className="mt-4 p-3 bg-light rounded border-start border-primary border-4">
+                <small className="text-muted">
+                  <i className="bi bi-shield-check me-2" style={{ color: "#003087" }} />
+                  <strong>Safety Tip:</strong> Always meet in public areas on campus (library, canteen,
+                  etc.)
+                </small>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Similar Items */}
+        <div className="mt-5 p-4 bg-light rounded" style={{ animation: 'fadeIn 0.7s ease-in' }}>
+          <h4 style={{ color: "#003087" }}>
+            <i className="bi bi-grid-3x3-gap me-2"></i>
+            Looking for more?
+          </h4>
+          <p className="text-muted">
+            Check out other free items in <strong>{product.category}</strong> category!
+          </p>
+          <a 
+            href="/products" 
+            className="btn btn-outline-primary"
+            style={{ transition: 'all 0.3s ease' }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(5px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}
+          >
+            Browse All Items <i className="bi bi-arrow-right ms-2" />
+          </a>
+        </div>
       </div>
 
-      {/* Similar Items */}
-      <div className="mt-5 p-4 bg-light rounded">
-        <h4 style={{ color: "#003087" }}>Looking for more?</h4>
-        <p className="text-muted">
-          Check out other free items in <strong>{product.category}</strong> category!
-        </p>
-        <a href="/products" className="btn btn-outline-primary">
-          Browse All Items <i className="bi bi-arrow-right ms-2" />
-        </a>
-      </div>
-    </div>
+      {/* Toast Notification */}
+      {showToast && (
+        <div 
+          className="position-fixed top-50 start-50 translate-middle"
+          style={{ 
+            zIndex: 9999,
+            animation: 'fadeInScale 0.3s ease-out',
+            width: '90%',
+            maxWidth: '400px'
+          }}
+        >
+          <div 
+            className={`alert alert-${
+              toastMessage.type === 'success' ? 'success' : 
+              toastMessage.type === 'error' ? 'danger' : 
+              toastMessage.type === 'warning' ? 'warning' : 
+              'info'
+            } d-flex align-items-center shadow-lg mb-0`}
+            role="alert"
+            style={{
+              borderRadius: '10px',
+              border: 'none',
+              padding: '1rem 1.5rem'
+            }}
+          >
+            <i className={`bi ${
+              toastMessage.type === 'success' ? 'bi-check-circle-fill' : 
+              toastMessage.type === 'error' ? 'bi-x-circle-fill' : 
+              toastMessage.type === 'warning' ? 'bi-exclamation-triangle-fill' : 
+              'bi-info-circle-fill'
+            } me-3`} style={{ fontSize: '2rem' }}></i>
+            <div className="flex-grow-1">{toastMessage.text}</div>
+          </div>
+        </div>
+      )}
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes fadeInScale {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+          }
+          100% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+        
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </>
   );
 }
 
