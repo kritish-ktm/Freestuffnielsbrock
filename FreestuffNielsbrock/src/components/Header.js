@@ -75,12 +75,6 @@ function Header() {
     };
   }, []);
 
-  // Optional: word-by-word reveal (same sentence, just split into spans)
-  const titleWords = "Free Stuff Marketplace".split(" ");
-  const line1Words = "Give away items you don't need.".split(" ");
-  const line2Words = "Find treasures others are sharing.".split(" ");
-  const line3Words = "100% free for Niels Brock students!".split(" ");
-
   return (
     <header className="hero-section">
       <canvas ref={canvasRef} className="canvas-dots" />
@@ -127,65 +121,25 @@ function Header() {
 
       <div className="hero-overlay">
         <div className="container text-center text-white py-5 position-relative" style={{ zIndex: 2 }}>
-          {/* Title (word-by-word pop) */}
-          <h1 className="display-3 fw-bold mb-3 position-relative hero-title">
-            {titleWords.map((w, i) => (
-              <span
-                key={i}
-                className="hero-word"
-                style={{ animationDelay: `${90 + i * 80}ms` }}
-              >
-                {w}&nbsp;
-              </span>
-            ))}
+          {/* About-like animation: slideDown */}
+          <h1 className="display-3 fw-bold mb-3 position-relative hero-title-anim">
+            Free Stuff Marketplace
           </h1>
 
-          {/* Paragraph (line-by-line + word pop) */}
-          <p className="lead mb-4 position-relative hero-subtitle">
-            <span className="hero-line">
-              {line1Words.map((w, i) => (
-                <span
-                  key={`l1-${i}`}
-                  className="hero-word"
-                  style={{ animationDelay: `${380 + i * 35}ms` }}
-                >
-                  {w}&nbsp;
-                </span>
-              ))}
-            </span>
+          {/* About-like animation: slideDown (slightly later) */}
+          <p className="lead mb-4 position-relative hero-subtitle-anim">
+            Give away items you don't need. Find treasures others are sharing.
             <br />
-            <span className="hero-line">
-              {line2Words.map((w, i) => (
-                <span
-                  key={`l2-${i}`}
-                  className="hero-word"
-                  style={{ animationDelay: `${580 + i * 35}ms` }}
-                >
-                  {w}&nbsp;
-                </span>
-              ))}
-            </span>
-            <br />
-            <span className="hero-line">
-              {line3Words.map((w, i) => (
-                <span
-                  key={`l3-${i}`}
-                  className="hero-word"
-                  style={{ animationDelay: `${760 + i * 35}ms` }}
-                >
-                  {w}&nbsp;
-                </span>
-              ))}
-            </span>
+            100% free for Niels Brock students!
           </p>
 
-          {/* Buttons (pop in + subtle float) */}
-          <div className="d-flex gap-3 justify-content-center flex-wrap position-relative hero-buttons">
-            <Link to="/products" className="btn btn-light btn-lg px-4 hero-btn hero-btn-1">
+          {/* About-like animation: fadeInUp (later) */}
+          <div className="d-flex gap-3 justify-content-center flex-wrap position-relative hero-buttons-anim">
+            <Link to="/products" className="btn btn-light btn-lg px-4">
               <i className="bi bi-shop me-2"></i>
               Browse Items
             </Link>
-            <Link to="/post" className="btn btn-success btn-lg px-3 hero-btn hero-btn-2">
+            <Link to="/post" className="btn btn-success btn-lg px-3">
               <i className="bi bi-plus-circle me-2"></i>
               Post an Item
             </Link>
@@ -273,108 +227,52 @@ function Header() {
           50% { transform: rotateZ(3deg); }
         }
 
-        /* ---------------- TEXT ANIMATIONS (ONLY) ---------------- */
-
-        /* Smooth intro for title wrapper */
-        .hero-title {
-          will-change: transform, opacity;
+        /* -------- About-page style animations applied to hero text only -------- */
+        .hero-title-anim {
+          animation: slideDown 0.6s ease-out;
         }
 
-        /* Each word pops up */
-        .hero-word {
-          display: inline-block;
-          opacity: 0;
-          transform: translateY(18px) scale(0.98);
-          animation: wordPop 650ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-          will-change: transform, opacity;
+        .hero-subtitle-anim {
+          animation: slideDown 0.8s ease-out;
         }
 
-        @keyframes wordPop {
-          0% {
+        .hero-buttons-anim {
+          animation: fadeInUp 0.9s ease-out;
+        }
+
+        @keyframes slideDown {
+          from {
             opacity: 0;
-            transform: translateY(18px) scale(0.98);
-            filter: blur(2px);
+            transform: translateY(-20px);
           }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
-          }
-        }
-
-        /* Subtitle overall fade (keeps it cohesive) */
-        .hero-subtitle {
-          opacity: 0;
-          transform: translateY(10px);
-          animation: blockFadeUp 700ms ease-out 320ms forwards;
-          will-change: transform, opacity;
-        }
-
-        @keyframes blockFadeUp {
           to {
             opacity: 1;
             transform: translateY(0);
           }
         }
 
-        /* Buttons pop in (after text) */
-        .hero-buttons {
-          opacity: 0;
-          transform: translateY(12px);
-          animation: blockFadeUp 650ms ease-out 920ms forwards;
-          will-change: transform, opacity;
-        }
-
-        /* Subtle float (professional, not janky) */
-        .hero-btn {
-          position: relative;
-          transition: transform 220ms ease, box-shadow 220ms ease;
-          will-change: transform;
-        }
-
-        .hero-btn:hover {
-          transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
-        }
-
-        /* Tiny float only after load */
-        .hero-btn-1 {
-          animation: btnFloat 2.8s ease-in-out 1.4s infinite;
-        }
-        .hero-btn-2 {
-          animation: btnFloat 3.2s ease-in-out 1.4s infinite;
-        }
-
-        @keyframes btnFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         @media (max-width: 768px) {
           .hero-section { min-height: 400px; }
           .hero-section h1 { font-size: 2rem; }
           .graphic-item { font-size: 2.5rem; width: 60px; height: 60px; }
-
-          /* Reduce motion a bit on mobile */
-          .hero-word {
-            animation-duration: 560ms;
-          }
-          .hero-btn-1, .hero-btn-2 {
-            animation: none;
-          }
         }
 
-        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
-          .hero-word,
-          .hero-subtitle,
-          .hero-buttons,
-          .hero-btn-1,
-          .hero-btn-2 {
+          .hero-title-anim,
+          .hero-subtitle-anim,
+          .hero-buttons-anim {
             animation: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-            filter: none !important;
           }
         }
       `}</style>
