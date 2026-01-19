@@ -245,8 +245,20 @@ function Home() {
           <h2 className="text-center mb-5" style={{ color: "#003087" }}>
             How It Works
           </h2>
-          <div className="row g-4">
-            <div className="col-md-4 text-center">
+         <div className="row g-4">
+  <div className="col-md-4 text-center how-card how-delay-1">
+    ...
+  </div>
+
+  <div className="col-md-4 text-center how-card how-delay-2">
+    ...
+  </div>
+
+  <div className="col-md-4 text-center how-card how-delay-3">
+    ...
+  </div>
+</div>
+
               <div
                 className="feature-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                 style={{ width: "80px", height: "80px", backgroundColor: "#003087" }}
@@ -717,6 +729,21 @@ function Home() {
     width: 100%;
     overflow: hidden;
   }
+
+  .how-card .feature-icon {
+  animation: iconPop 0.7s ease-out forwards;
+  transform: scale(0.85);
+}
+
+.how-delay-1 .feature-icon { animation-delay: 0.18s; }
+.how-delay-2 .feature-icon { animation-delay: 0.38s; }
+.how-delay-3 .feature-icon { animation-delay: 0.58s; }
+
+@keyframes iconPop {
+  0% { transform: scale(0.85); }
+  70% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
   .marquee-content {
     display: flex;
     width: max-content;
