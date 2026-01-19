@@ -1,8 +1,17 @@
 // src/context/AuthContext.js
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../supabase";
+import { sanitizeText } from "../utils/sanitize";
 
 const AuthContext = createContext();
+
+// University email domain
+const UNIVERSITY_DOMAIN = "@edu.nielsbrock.dk";
+
+// Validate university email
+const isUniversityEmail = (email) => {
+  return email.toLowerCase().trim().endsWith(UNIVERSITY_DOMAIN);
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -55,39 +64,52 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  // Google login
-  const signInWithGooglePopup = async () => {
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'select_account'
+  // Microsoft Azure AD login with university email restriction
+  const signInWithMicrosoft = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "azure",
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          scopes: 'email profile openid',
+          queryParams: {
+            prompt: 'select_account',
+            // Restrict to Niels Brock tenant (you'll need to configure this in Azure)
+            domain_hint: 'edu.nielsbrock.dk'
+          },
+          skipBrowserRedirect: false,
         },
-        // Use popup instead of redirect
-        skipBrowserRedirect: false, // Keep as false for redirect
-        // OR set to true and handle popup manually
-      },
-    });
+      });
 
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error during Google sign in:", error);
-    throw error;
-  }
-};
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error during Microsoft sign in:", error);
+      throw error;
+    }
+  };
 
-  // Email/Password Sign Up
+  // Email/Password Sign Up - Only allows university emails
   const signUpWithEmail = async (email, password, userData) => {
     try {
+      // Validate university email
+      if (!isUniversityEmail(email)) {
+        throw new Error(`Please use your Niels Brock student email (${UNIVERSITY_DOMAIN})`);
+      }
+
+      // Sanitize user data
+      const sanitizedData = {
+        full_name: userData?.full_name ? sanitizeText(userData.full_name) : null,
+        section: userData?.section ? sanitizeText(userData.section) : null,
+        ...userData
+      };
+
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.toLowerCase().trim(),
         password,
         options: {
-          data: userData, // Store user metadata like full_name, section, etc.
+          data: sanitizedData,
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         },
       });
 
@@ -99,11 +121,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Email/Password Sign In
+  // Email/Password Sign In - Only allows university emails
   const signInWithEmail = async (email, password) => {
     try {
+      // Validate university email
+      if (!isUniversityEmail(email)) {
+        throw new Error(`Please use your Niels Brock student email (${UNIVERSITY_DOMAIN})`);
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.toLowerCase().trim(),
         password,
       });
 
@@ -115,11 +142,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Magic Link Sign In
+  // Magic Link Sign In - Only allows university emails
   const signInWithMagicLink = async (email) => {
     try {
+      // Validate university email
+      if (!isUniversityEmail(email)) {
+        throw new Error(`Please use your Niels Brock student email (${UNIVERSITY_DOMAIN})`);
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: email.toLowerCase().trim(),
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -156,12 +188,13 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ 
       user, 
-      signInWithGooglePopup, 
+      signInWithMicrosoft, 
       signInWithEmail, 
       signUpWithEmail, 
       signInWithMagicLink, 
       signOut, 
-      loading 
+      loading,
+      isUniversityEmail // Export for use in forms
     }}>
       {children}
     </AuthContext.Provider>

@@ -84,7 +84,7 @@ function About() {
       >
         <div className="container">
           <h1 className="display-4 fw-bold mb-3">About Free Stuff Marketplace</h1>
-          <p className="lead">Why we created this platform and our mission</p>
+          <p className="lead">Why this platform was created and its mission</p>
         </div>
       </section>
 
@@ -94,13 +94,13 @@ function About() {
           <div className="row align-items-center g-4">
             <div className="col-lg-6">
               <h2 style={{ color: "#003087" }} className="fw-bold mb-4">
-                🎯 Our Story
+                🎯 The Story
               </h2>
               <p className="lead text-muted mb-3">
-                Free Stuff Marketplace is a student-led project and was born from a simple observation: Niels Brock students have tons of items they no longer need, while others are constantly searching for affordable alternatives.
+                Free Stuff Marketplace is a student-led project born from a simple observation: Niels Brock students have tons of items they no longer need, while others are constantly searching for affordable alternatives.
               </p>
               <p className="text-muted mb-3">
-                We realized that creating a community-driven platform could solve two problems at once:
+                Creating a community-driven platform solves two problems at once:
               </p>
               <ul className="text-muted">
                 <li className="mb-2"><strong>✓ Reduce Waste:</strong> Give items a second life instead of throwing them away</li>
@@ -124,7 +124,7 @@ function About() {
               >
                 <div>
                   <i className="bi bi-lightbulb" style={{ fontSize: "4rem", marginBottom: "20px" }}></i>
-                  <h3>"Every item has a story, and we help write the next chapter"</h3>
+                  <h3>"Every item has a story, and the platform helps write the next chapter"</h3>
                 </div>
               </div>
             </div>
@@ -159,7 +159,7 @@ function About() {
                 </div>
                 <h5 className="fw-bold">Reduce Landfill Waste</h5>
                 <p className="text-muted">
-                  Every item shared prevents unnecessary waste in landfills. By giving items a second life, we reduce environmental impact.
+                  Every item shared prevents unnecessary waste in landfills. By giving items a second life, the platform reduces environmental impact.
                 </p>
               </div>
             </div>
@@ -183,7 +183,7 @@ function About() {
                 </div>
                 <h5 className="fw-bold">Lower Carbon Footprint</h5>
                 <p className="text-muted">
-                  By promoting reuse over purchasing new items, we significantly reduce the carbon emissions from production and shipping.
+                  By promoting reuse over purchasing new items, the website significantly reduces carbon emissions from production and shipping.
                 </p>
               </div>
             </div>
@@ -207,7 +207,7 @@ function About() {
                 </div>
                 <h5 className="fw-bold">Circular Economy</h5>
                 <p className="text-muted">
-                  We promote a circular economy where items keep circulating in the community instead of being discarded.
+                  This platform promotes a circular economy where items keep circulating in the community instead of being discarded.
                 </p>
               </div>
             </div>
@@ -240,7 +240,7 @@ function About() {
               <div className="card border-0 shadow-sm p-4 h-100" style={{ borderLeft: "5px solid #00A9E0" }}>
                 <h5 className="fw-bold mb-3">Financial Relief</h5>
                 <p className="text-muted mb-3">
-                  Student life comes with limited budgets. Our platform provides access to free and cheap items, allowing students to allocate their resources to education and experiences.
+                  Student life comes with limited budgets. This platform provides access to free and cheap items, allowing students to allocate their resources to education and experiences.
                 </p>
                 <ul className="text-muted">
                   <li>✓ 100% free items available</li>
@@ -264,16 +264,16 @@ function About() {
             <div className="col-lg-6">
               <h4 className="fw-bold mb-3">More Than Just a Marketplace</h4>
               <p className="text-muted mb-3">
-                Free Stuff Marketplace is about building relationships and trust within the Niels Brock community. When you give away an item, you're not just decluttering—you're helping a fellow student.
+                Free Stuff Marketplace is about building relationships and trust within the Niels Brock community. When someone gives away an item, they're not just decluttering—they're helping a fellow student.
               </p>
               <p className="text-muted mb-3">
-                Our platform encourages:
+                The platform encourages:
               </p>
               <ul className="text-muted">
                 <li className="mb-2"><strong>Trust & Safety:</strong> All members are Niels Brock students, creating a safe environment</li>
                 <li className="mb-2"><strong>Generosity:</strong> The joy of giving and helping others succeed</li>
-                <li className="mb-2"><strong>Collaboration:</strong> Work together to reduce waste and support each other</li>
-                <li><strong>Sustainability Mindset:</strong> Inspire others to think about environmental impact</li>
+                <li className="mb-2"><strong>Collaboration:</strong> Working together to reduce waste and support each other</li>
+                <li><strong>Sustainability Mindset:</strong> Inspiring others to think about environmental impact</li>
               </ul>
             </div>
             <div className="col-lg-6">
@@ -292,7 +292,7 @@ function About() {
               >
                 <div>
                   <i className="bi bi-people" style={{ fontSize: "4rem", marginBottom: "20px" }}></i>
-                  <h3>"Together, we create a stronger, more sustainable community"</h3>
+                  <h3>"Together, the community creates a stronger, more sustainable future"</h3>
                 </div>
               </div>
             </div>
@@ -304,7 +304,7 @@ function About() {
       <section className="py-5">
         <div className="container" style={{ maxWidth: "700px" }}>
           <h2 style={{ color: "#003087" }} className="fw-bold text-center mb-4">
-            💬 What Our Community Says
+            💬 What the Community Says
           </h2>
 
           {/* Comment Form */}
@@ -316,7 +316,7 @@ function About() {
                   <textarea
                     className="form-control form-control-lg"
                     rows="4"
-                    placeholder="What do you think about our initiative? Share your thoughts..."
+                    placeholder="What do you think about this initiative? Share your thoughts..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     disabled={submitting}
@@ -333,7 +333,7 @@ function About() {
             </div>
           ) : (
             <div className="alert alert-info text-center mb-5">
-              <strong>Login to leave a comment!</strong> Sign in to share your thoughts about our community.
+              <strong>Login to leave a comment!</strong> Sign in to share your thoughts about the community.
             </div>
           )}
 
@@ -398,44 +398,13 @@ function About() {
         }}
       >
         <div className="container">
-          <h2 className="fw-bold mb-3">Join Our Movement</h2>
+          <h2 className="fw-bold mb-3">Join the Movement</h2>
           <p className="lead mb-4">
             Be part of a community that cares about sustainability and helping others
           </p>
           <a href="/products" className="btn btn-light btn-lg px-5">
             <i className="bi bi-shop me-2"></i>Start Browsing
           </a>
-        </div>
-      </section>
-
-      {/* Dedication Section */}
-      <section className="py-5 bg-light">
-        <div className="container" style={{ maxWidth: "800px" }}>
-          <div className="text-center mb-5">
-            <h2 style={{ color: "#003087" }} className="fw-bold mb-3">
-              ✨ A Special Dedication ✨
-            </h2>
-            <p className="lead text-muted">
-              This project is dedicated with gratitude and appreciation
-            </p>
-          </div>
-
-          <div className="card border-0 shadow-lg p-5" style={{ borderTop: "5px solid #D4AF37" }}>
-            <div className="text-center">
-              <h4 className="fw-bold mb-4" style={{ color: "#003087" }}>
-                To the Section E 2024 September Intake Students
-              </h4>
-              <p className="text-muted mb-4 fs-5">
-                This project is dedicated to my friends from my section. Your support, encouragement, and valuable feedback played a crucial role in bringing this platform to life. Thank you for believing in this idea and for contributing to a collaborative, supportive, and inspiring community at Niels Brock.
-               </p>
-              <div className="mt-5 pt-4 border-top">
-                <p className="text-muted mb-0" style={{ fontSize: "0.95rem" }}>
-                  <i className="bi bi-heart-fill me-2" style={{ color: "#D4AF37" }}></i>
-                  Built with passion for a better, more sustainable community
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
     </div>
