@@ -206,28 +206,37 @@ function Home() {
       <Header />
 
       {/* Beta Alert */}
-      <div className="alert alert-warning text-center mb-0" role="alert" style={{ borderRadius: 0 }}>
-        🚧 <strong>Beta Version:</strong> We're actively testing and improving the platform. Your feedback is welcome!
+      <div 
+        className="alert alert-warning text-center mb-0" 
+        role="alert" 
+        style={{ 
+          borderRadius: 0,
+          animation: 'slideDownBanner 0.6s ease-out',
+          background: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)',
+          border: 'none',
+          boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)'
+        }}
+      >
+        <i className="bi bi-cone-striped me-2" style={{ fontSize: '1.2rem' }}></i>
+        <strong>Beta Version:</strong> We're actively testing and improving the platform. Your feedback is welcome!
       </div>
 
-      {/* Job Portal Announcement Banner */}
-      <div className="alert alert-info text-center mb-0" role="alert" style={{ borderRadius: 0, backgroundColor: "#D4AF37", borderColor: "#D4AF37", color: "#fff" }}>
-        💼 <strong>Coming Soon:</strong> Career Opportunities Platform - Connect with employers for internships, part-time positions, and job opportunities!
-      </div>
-
-      {/* Disclaimer Banner */}
+      {/* Student-Led Project Banner */}
       <div
         className="alert alert-info text-center mb-0"
         role="alert"
         style={{
           borderRadius: 0,
-          backgroundColor: "#2E7D32",
-          borderColor: "#2E7D32",
+          background: 'linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%)',
+          border: 'none',
           color: "#ffffff",
           fontSize: "0.95rem",
+          animation: 'slideDownBanner 0.8s ease-out',
+          boxShadow: '0 2px 8px rgba(46, 125, 50, 0.3)'
         }}
       >
-        🎓 <strong>Student-Led Project:</strong> This platform is created by students for students and is not an official website or service of Niels Brock.
+        <i className="bi bi-mortarboard-fill me-2" style={{ fontSize: '1.2rem' }}></i>
+        <strong>Student-Led Project:</strong> This platform is created by students for students and is not an official website or service of Niels Brock.
       </div>
 
       {/* How It Works Section */}
