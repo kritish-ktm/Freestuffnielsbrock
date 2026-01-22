@@ -26,7 +26,7 @@ import ManageRequests from "./pages/ManageRequests";
 import Requests from "./pages/Requests";
 import {AuthProvider} from "./context/AuthContext"; 
 import {NotificationProvider} from "./context/NotificationContext"; 
-
+import EditItem from "./pages/EditItem";
 function App() {
   return (
     <>
@@ -57,6 +57,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/manage-requests" element={<ManageRequests />} />
         <Route path="/requests" element={<Requests />} />
+        <Route path="/edit-item/:id" element={<EditItem />} />
       </Routes>
       </NotificationProvider>
       </AuthProvider>

@@ -2,7 +2,7 @@
 // Install: npm install dompurify
 
 import DOMPurify from 'dompurify';
-
+export{ sanitizeText, sanitizeHTML, sanitizeURL };
 /**
  * Sanitize HTML content for safe display
  * Use this when you need to display user-generated HTML
