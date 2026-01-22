@@ -2,7 +2,7 @@
 // Install: npm install dompurify
 
 import DOMPurify from 'dompurify';
-export{ sanitizeText, sanitizeHTML, sanitizeURL };
+
 /**
  * Sanitize HTML content for safe display
  * Use this when you need to display user-generated HTML
@@ -24,7 +24,7 @@ export const sanitizeHTML = (dirty, options = {}) => {
  */
 export const sanitizeText = (text) => {
   if (!text || typeof text !== 'string') return '';
-  
+
   return text
     .trim()
     .replace(/[<>]/g, '') // Remove angle brackets
@@ -51,15 +51,15 @@ export const sanitizeForReact = (content) => {
  */
 export const sanitizeURL = (url) => {
   if (!url) return '';
-  
+
   try {
     const parsed = new URL(url);
-    
+
     // Only allow http and https protocols
     if (!['http:', 'https:'].includes(parsed.protocol)) {
       return '';
     }
-    
+
     return parsed.toString();
   } catch {
     return '';
@@ -71,9 +71,9 @@ export const sanitizeURL = (url) => {
  */
 export const sanitizeObject = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
-  
+
   const sanitized = {};
-  
+
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
       sanitized[key] = sanitizeText(value);
@@ -83,7 +83,7 @@ export const sanitizeObject = (obj) => {
       sanitized[key] = value;
     }
   }
-  
+
   return sanitized;
 };
 
@@ -92,7 +92,7 @@ export const sanitizeObject = (obj) => {
  */
 export const escapeHTML = (text) => {
   if (!text) return '';
-  
+
   const map = {
     '&': '&amp;',
     '<': '&lt;',
@@ -101,7 +101,7 @@ export const escapeHTML = (text) => {
     "'": '&#x27;',
     '/': '&#x2F;'
   };
-  
+
   return text.replace(/[&<>"'/]/g, (char) => map[char]);
 };
 
@@ -110,7 +110,7 @@ export const escapeHTML = (text) => {
  */
 export const sanitizeFileName = (fileName) => {
   if (!fileName) return '';
-  
+
   return fileName
     .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars with underscore
     .replace(/\.{2,}/g, '.') // Remove multiple dots
