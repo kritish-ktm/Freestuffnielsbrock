@@ -120,12 +120,13 @@ function Navbar() {
       }}
     >
       <div className="container">
-        {/* Brand/Logo - LARGER SIZE */}
+        {/* Brand/Logo - 1.5x LARGER (120px) */}
         <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
           <img 
             src="/freestuffnielsbrocklogo.png?v=2" 
             alt="Free Stuff Niels Brock" 
-            height="80" width="80"  
+            height="120" 
+            width="120"  
             style={{ objectFit: "contain" }}
           />
           <span className="fw-bold">Free Stuff <span style={{ color: "#7FD856" }}>Niels Brock</span></span>
