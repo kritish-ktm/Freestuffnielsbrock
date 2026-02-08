@@ -125,7 +125,7 @@ function Navbar() {
           <img 
             src="/freestuffnielsbrocklogo.png?v=2" 
             alt="Free Stuff Niels Brock" 
-            height="60"
+            height="80" width="80"  
             style={{ objectFit: "contain" }}
           />
           <span className="fw-bold">Free Stuff <span style={{ color: "#7FD856" }}>Niels Brock</span></span>
