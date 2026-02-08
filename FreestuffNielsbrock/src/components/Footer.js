@@ -133,8 +133,8 @@ function Footer() {
         }
 
         footer {
-          background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1f3d1f 100%);
-          box-shadow: 0 -4px 20px rgba(127, 216, 86, 0.1);
+          background: linear-gradient(135deg, #d3c1c1 0%, #e0cece 50%, #4d684d 100%);
+          box-shadow: 0 -4px 20px rgba(100, 146, 79, 0.1);
         }
 
         h5, h6 {

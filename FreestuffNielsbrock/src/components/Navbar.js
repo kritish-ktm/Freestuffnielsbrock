@@ -120,15 +120,15 @@ function Navbar() {
       }}
     >
       <div className="container">
-        {/* Brand/Logo */}
+        {/* Brand/Logo - LARGER SIZE */}
         <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
           <img 
             src="/freestuffnielsbrocklogo.png?v=2" 
             alt="Free Stuff Niels Brock" 
-            height="45"
+            height="60"
             style={{ objectFit: "contain" }}
           />
-          <span className="fw-bold">Free Stuff <span style={{ color: "#D4AF37" }}>Niels Brock</span></span>
+          <span className="fw-bold">Free Stuff <span style={{ color: "#7FD856" }}>Niels Brock</span></span>
         </Link>
 
         {/* Mobile Toggle Button */}
@@ -187,7 +187,7 @@ function Navbar() {
                   <Link 
                     className="nav-link btn text-white px-3 py-1" 
                     to="/post"
-                    style={{ backgroundColor: "#D4AF37", border: "none", fontSize: "0.9rem", whiteSpace: "nowrap" }}
+                    style={{ backgroundColor: "#7FD856", border: "none", fontSize: "0.9rem", whiteSpace: "nowrap" }}
                   >
                     + Post
                   </Link>
@@ -548,7 +548,7 @@ function Navbar() {
         }
 
         .nav-link:hover {
-          color: #D4AF37 !important;
+          color: #7FD856 !important;
         }
 
         .dropdown-menu {
@@ -557,7 +557,7 @@ function Navbar() {
 
         .dropdown-item:hover {
           background-color: #f8f8f8;
-          color: #D4AF37;
+          color: #7FD856;
         }
 
         .btn:hover {
