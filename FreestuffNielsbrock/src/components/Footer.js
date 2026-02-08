@@ -4,14 +4,14 @@ import Logo from "../components/Logo";
 
 function Footer() {
   return (
-    <footer className="bg-dark text-white pt-5 pb-3 mt-5">
+    <footer className="bg-dark text-dark pt-5 pb-3 mt-5">
       <div className="container">
         <div className="row">
           {/* Logo & About Section */}
           <div className="col-md-4 mb-4">
             
             <h5 className="mb-3">Free Stuff Niels Brock</h5>
-            <p className="text-white">
+            <p className="text-dark">
               <div className="mb-3">
               <Logo />
             </div>
@@ -25,33 +25,33 @@ function Footer() {
             <h6 className="mb-3">Quick Links</h6>
             <ul className="list-unstyled">
               <li className="mb-2">
-                <Link to="/" className="text-white text-decoration-none hover-link">
+                <Link to="/" className="text-dark text-decoration-none hover-link">
                   <i className="bi bi-house me-2"></i>Home
                 </Link>
               </li>
               <li className="mb-2">
-                <Link to="/products" className="text-white text-decoration-none hover-link">
+                <Link to="/products" className="text-dark text-decoration-none hover-link">
                   <i className="bi bi-shop me-2"></i>Browse Items
                 </Link>
               </li>
               <li className="mb-2">
-                <Link to="/post" className="text-white text-decoration-none hover-link">
+                <Link to="/post" className="text-dark text-decoration-none hover-link">
                   <i className="bi bi-plus-circle me-2"></i>Post an Item
                 </Link>
               </li>
               
               <li className="mb-2">
-                <Link to="/products" className="text-white text-decoration-none hover-link">
+                <Link to="/products" className="text-dark text-decoration-none hover-link">
                   <i className="bi bi-heart me-2"></i>My Products
                 </Link>
               </li>
               <li className="mb-2">
-                <Link to="/cart" className="text-white text-decoration-none hover-link">
+                <Link to="/cart" className="text-dark text-decoration-none hover-link">
                   <i className="bi bi-cart me-2"></i>My Items
                 </Link>
               </li>
               <li className="mb-2">
-                <Link to="/about" className="text-white text-decoration-none hover-link">
+                <Link to="/about" className="text-dark text-decoration-none hover-link">
                   <i className="bi bi-people-fill me-2"></i>About Us
                 </Link>
               </li>
@@ -63,25 +63,25 @@ function Footer() {
             <h6 className="mb-3">Legal & Support</h6>
             <ul className="list-unstyled mb-4">
               <li className="mb-2">
-                <Link to="/privacy" className="text-white text-decoration-none hover-link">
+                <Link to="/privacy" className="text-dark text-decoration-none hover-link">
                   <i className="bi bi-shield-lock me-2"></i>Privacy Policy
                 </Link>
               </li>
               <li className="mb-2">
-                <Link to="/terms" className="text-white text-decoration-none hover-link">
+                <Link to="/terms" className="text-dark text-decoration-none hover-link">
                   <i className="bi bi-file-text me-2"></i>Terms of Service
                 </Link>
               </li>
             </ul>
 
             <h6 className="mb-3">Contact Us</h6>
-            <p className="text-white mb-2">
+            <p className="text-dark mb-2">
               <i className="bi bi-envelope me-2"></i>
-              <a href="mailto:freestuffnbcbc@gmail.com" className="text-white text-decoration-none hover-link">
+              <a href="mailto:freestuffnbcbc@gmail.com" className="text-dark text-decoration-none hover-link">
                 freestuffnbcbc@gmail.com
               </a>
             </p>
-            <p className="text-white mb-3">
+            <p className="text-dark mb-3">
               <i className="bi bi-geo-alt me-2"></i>
               Copenhagen, Denmark
             </p>
@@ -105,7 +105,7 @@ function Footer() {
 
         {/* Copyright */}
         <div className="row">
-          <div className="col text-center text-white">
+          <div className="col text-center text-dark">
             <p className="mb-0">
               &copy; {new Date().getFullYear()} Free Stuff Niels Brock. All rights reserved.
             </p>
@@ -133,12 +133,8 @@ function Footer() {
         }
 
         footer {
-          background: linear-gradient(135deg, #d3c1c1 0%, #e0cece 50%, #4d684d 100%);
-          box-shadow: 0 -4px 20px rgba(100, 146, 79, 0.1);
-        }
-
-        h5, h6 {
-          color: #7FD856 !important;
+          background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1f3d1f 100%);
+          box-shadow: 0 -4px 20px rgba(127, 216, 86, 0.1);
         }
 
         hr {
