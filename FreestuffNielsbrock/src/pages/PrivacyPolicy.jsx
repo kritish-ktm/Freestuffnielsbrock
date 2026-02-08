@@ -10,7 +10,7 @@ function PrivacyPolicy() {
 
       <h1 className="mb-4" style={{ color: "#003087" }}>Privacy Policy</h1>
       <p className="text-muted mb-4">
-        <strong>Last Updated:</strong> December 2025
+        <strong>Last Updated:</strong> February 2026
       </p>
 
       <div className="card shadow-sm p-4">
@@ -23,17 +23,10 @@ function PrivacyPolicy() {
 
         <h3 className="mt-4 mb-3" style={{ color: "#003087" }}>2. Information We Collect</h3>
         
-        <p><strong>Account & Identity Verification Information:</strong></p>
+        <p><strong>Student Verification Information:</strong></p>
         <ul>
-          <li>Email address (required for registration)</li>
-          <li>Full name (required for community identification)</li>
-          <li>Phone number (required for account verification and recovery)</li>
-          <li>Date of birth (required for age verification)</li>
-          <li>Student ID (required for verification of official student status)</li>
-          <li>Section (academic section at Niels Brock)</li>
-          <li>Intake month (when you started at Niels Brock)</li>
-          <li>Course / Program (your course or program of study)</li>
-          <li>Authentication data from Google</li>
+          <li>Niels Brock Student ID (required for verification of official student status)</li>
+          <li>Email address (provided by Google Authentication for login purposes)</li>
         </ul>
 
         <p className="mt-3"><strong>Item Information:</strong></p>
@@ -42,15 +35,12 @@ function PrivacyPolicy() {
           <li>Price (if any)</li>
           <li>Pickup location</li>
           <li>Item images</li>
-          <li>WhatsApp number (for connecting interested buyers with sellers)</li>
         </ul>
 
         <p className="mt-3"><strong>Community Interaction Data:</strong></p>
         <ul>
           <li>Items marked as interested</li>
           <li>Request history (who showed interest in your items)</li>
-          <li>Comments and feedback on the platform</li>
-          <li>User feedback and ratings</li>
         </ul>
 
         <p className="mt-3"><strong>Automatic Information:</strong></p>
@@ -59,15 +49,13 @@ function PrivacyPolicy() {
           <li>Pages visited and time spent</li>
           <li>Cookies and local storage data</li>
           <li>Device information</li>
-          <li>Analytics data (user behavior and interaction patterns)</li>
         </ul>
 
         <h3 className="mt-4 mb-3" style={{ color: "#003087" }}>3. How We Use Your Information</h3>
         <ul>
           <li>To create and maintain your account</li>
           <li>To verify your identity as a Niels Brock student and prevent fraud</li>
-          <li>To display your posted items and profile information to other users</li>
-          <li>To share your WhatsApp number with interested buyers so they can contact you</li>
+          <li>To display your posted items to other users</li>
           <li>To notify you when someone shows interest in your items</li>
           <li>To enable communication and transactions between users</li>
           <li>To build and strengthen the Niels Brock student community</li>
@@ -97,7 +85,7 @@ function PrivacyPolicy() {
 
         <h3 className="mt-4 mb-3" style={{ color: "#003087" }}>5. Fraud Prevention & Community Safety</h3>
         <p>
-          We collect identity verification information (name, phone, date of birth, student ID) specifically to:
+          We collect your Student ID specifically to:
         </p>
         <ul>
           <li>Prevent fraudulent accounts and misuse of the platform</li>
@@ -121,17 +109,11 @@ function PrivacyPolicy() {
 
         <h3 className="mt-4 mb-3" style={{ color: "#003087" }}>7. Sharing Your Information</h3>
         <p>
-          <strong>Your WhatsApp number is shared with:</strong>
+          <strong>Your information is visible to:</strong>
         </p>
         <ul>
-          <li>Users who mark your items as interested (so they can contact you directly)</li>
-        </ul>
-        <p className="mt-3">
-          <strong>Your profile information is visible to:</strong>
-        </p>
-        <ul>
-          <li>All logged-in users on the platform (name, section, course)</li>
-          <li>Users viewing your posted items</li>
+          <li>All logged-in users on the platform can see your posted items</li>
+          <li>Users who show interest in your items can see basic interaction history</li>
         </ul>
         <p className="mt-3">
           <strong>Your information is NOT shared with:</strong>
@@ -140,6 +122,13 @@ function PrivacyPolicy() {
           <li>Third-party advertisers or marketing companies</li>
           <li>External services (except as described below)</li>
           <li>Any other parties without your explicit consent</li>
+        </ul>
+        <p className="mt-3">
+          <strong>Student ID Privacy:</strong>
+        </p>
+        <ul>
+          <li>Your Student ID is never displayed to other users</li>
+          <li>It is stored securely and used only for verification purposes</li>
         </ul>
 
         <h3 className="mt-4 mb-3" style={{ color: "#003087" }}>8. Third-Party Services</h3>
@@ -150,7 +139,6 @@ function PrivacyPolicy() {
           <li><strong>Google Authentication:</strong> For secure login (Google handles your password)</li>
           <li><strong>Supabase:</strong> For database storage and management</li>
           <li><strong>Vercel:</strong> For website hosting and deployment</li>
-          <li><strong>WhatsApp:</strong> We only provide direct links; WhatsApp is not integrated with our platform</li>
         </ul>
         <p className="mt-3">
           Each service has its own privacy policy. We recommend reviewing them.
@@ -177,7 +165,6 @@ function PrivacyPolicy() {
           <li><strong>Posted Items:</strong> Deleted when item is removed by the user</li>
           <li><strong>Interest Records:</strong> Deleted when user removes interest or deletes account</li>
           <li><strong>Server Logs:</strong> Deleted after 90 days</li>
-          <li><strong>User Feedback & Comments:</strong> Retained as long as the user's account is active</li>
         </ul>
 
         <h3 className="mt-4 mb-3" style={{ color: "#003087" }}>11. Children's Privacy</h3>
