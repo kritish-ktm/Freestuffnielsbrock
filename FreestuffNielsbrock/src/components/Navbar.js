@@ -120,33 +120,22 @@ function Navbar() {
       }}
     >
       <div className="container">
-        {/* Brand/Logo - 1.5x LARGER (120px) */}
-        <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
-          <img 
-            src="/freestuffnielsbrocklogo.png?v=2" 
-            alt="Free Stuff Niels Brock" 
-            height="120" 
-            width="120"  
-            style={{ objectFit: "contain" }}
-          />
-          <span className="fw-bold">Free Stuff <span style={{ color: "#7FD856" }}>Niels Brock</span></span>
-        </Link>
+        <div className="d-flex align-items-center justify-content-between w-100">
+          {/* Left: Logo */}
+          <Link className="navbar-brand d-flex align-items-center gap-2 mb-0" to="/">
+            <img 
+              src="/freestuffnielsbrocklogo.png?v=2" 
+              alt="Free Stuff Niels Brock" 
+              height="70" 
+              width="70"  
+              style={{ objectFit: "contain" }}
+            />
+            <span className="fw-bold d-none d-lg-inline">Free Stuff <span style={{ color: "#7FD856" }}>Niels Brock</span></span>
+          </Link>
 
-        {/* Mobile Toggle Button */}
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
-
-        {/* Nav Links */}
-        <div className="collapse navbar-collapse" id="navbarNav">
-          {/* Compact Search - FIXED to always show button */}
+          {/* Center: Search Bar */}
           <form
-            className="d-flex align-items-center mx-3 compact-search"
+            className="d-none d-lg-flex align-items-center mx-auto compact-search"
             onSubmit={handleSearch}
           >
             <div className="input-group">
@@ -163,304 +152,336 @@ function Navbar() {
             </div>
           </form>
 
-          <ul className="navbar-nav ms-auto align-items-center gap-1">
-            <li className="nav-item">
-              <Link className="nav-link fw-semibold px-2" to="/">
-                Home
-              </Link>
-            </li>
+          {/* Mobile Toggle Button */}
+          <button
+            className="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
 
-            <li className="nav-item">
-              <Link className="nav-link fw-semibold px-2" to="/products">
-                Browse
-              </Link>
-            </li>
+          {/* Right: Nav Links */}
+          <div className="collapse navbar-collapse" id="navbarNav">
+            {/* Mobile Search */}
+            <form
+              className="d-lg-none d-flex align-items-center my-3 compact-search"
+              onSubmit={handleSearch}
+            >
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control compact-search-input"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button className="btn compact-search-btn" type="submit">
+                  <i className="bi bi-search"></i>
+                </button>
+              </div>
+            </form>
 
-            <li className="nav-item">
-              <Link className="nav-link fw-semibold px-2" to="/about">
-                About
-              </Link>
-            </li>
-
-            {user ? (
-              <>
-                <li className="nav-item">
-                  <Link 
-                    className="nav-link btn text-white px-3 py-1" 
-                    to="/post"
-                    style={{ backgroundColor: "#7FD856", border: "none", fontSize: "0.9rem", whiteSpace: "nowrap" }}
-                  >
-                    + Post
-                  </Link>
-                </li>
-
-                <li className="nav-item ms-2">
-                  <Link className="nav-link position-relative p-1" to="/cart">
-                    <i className="bi bi-heart" style={{ fontSize: "1.4rem" }}></i>
-                  </Link>
-                </li>
-
-                {/* GREEN Notification - Incoming Requests */}
-                <li className="nav-item dropdown ms-2">
-                  <button
-                    className="nav-link position-relative btn btn-link p-1"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <i className="bi bi-inbox-fill" style={{ fontSize: "1.4rem", color: "#28a745" }}></i>
-                    {incomingCount > 0 && (
-                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" style={{ fontSize: "0.65rem" }}>
-                        {incomingCount}
-                        <span className="visually-hidden">unread incoming requests</span>
-                      </span>
-                    )}
-                  </button>
-
-                  <ul className="dropdown-menu dropdown-menu-end notification-dropdown" style={{ width: "350px", maxHeight: "400px", overflowY: "auto" }}>
-                    <li className="dropdown-header d-flex justify-content-between align-items-center">
-                      <span className="fw-bold" style={{ color: "#28a745" }}>
-                        <i className="bi bi-inbox me-2"></i>
-                        Incoming Requests
-                      </span>
-                      {incomingCount > 0 && (
-                        <button 
-                          className="btn btn-sm btn-link text-decoration-none"
-                          onClick={markAllIncomingAsRead}
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                    </li>
-                    <li><hr className="dropdown-divider" /></li>
-
-                    {incomingCount === 0 ? (
-                      <li className="px-3 py-4 text-center text-muted">
-                        <i className="bi bi-inbox" style={{ fontSize: "2rem" }}></i>
-                        <p className="mb-0 mt-2 small">No new requests</p>
-                      </li>
-                    ) : (
-                      <>
-                        {incomingRequests.map((request) => (
-                          <li key={request.id}>
-                            <a
-                              href="#"
-                              className="dropdown-item notification-item"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleIncomingClick(request);
-                              }}
-                            >
-                              <div className="d-flex align-items-start gap-2">
-                                <img
-                                  src={request.item_image || getPlaceholderImage(request.item_id)}
-                                  alt={request.item_name}
-                                  className="rounded"
-                                  style={{ width: "50px", height: "50px", objectFit: "cover" }}
-                                  onError={(e) => { e.target.src = getPlaceholderImage(request.item_id); }}
-                                />
-                                <div className="flex-grow-1">
-                                  <p className="mb-1 fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>
-                                    {request.requester_name} is interested
-                                  </p>
-                                  <p className="mb-1 text-muted small">
-                                    in your <strong>{request.item_name}</strong>
-                                  </p>
-                                  <small className="text-muted">
-                                    <i className="bi bi-clock me-1"></i>
-                                    {new Date(request.created_at).toLocaleDateString()}
-                                  </small>
-                                </div>
-                                <span className="badge bg-success-subtle text-success">NEW</span>
-                              </div>
-                            </a>
-                            <hr className="dropdown-divider" />
-                          </li>
-                        ))}
-                        <li>
-                          <Link 
-                            className="dropdown-item text-center text-primary fw-semibold"
-                            to="/manage-requests"
-                          >
-                            View All Requests →
-                          </Link>
-                        </li>
-                      </>
-                    )}
-                  </ul>
-                </li>
-
-                {/* RED Notification - Request Updates */}
-                <li className="nav-item dropdown ms-2">
-                  <button
-                    className="nav-link position-relative btn btn-link p-1"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <i className="bi bi-bell-fill" style={{ fontSize: "1.4rem", color: "#dc3545" }}></i>
-                    {updatesCount > 0 && (
-                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: "0.65rem" }}>
-                        {updatesCount}
-                        <span className="visually-hidden">unread updates</span>
-                      </span>
-                    )}
-                  </button>
-
-                  <ul className="dropdown-menu dropdown-menu-end notification-dropdown" style={{ width: "350px", maxHeight: "400px", overflowY: "auto" }}>
-                    <li className="dropdown-header d-flex justify-content-between align-items-center">
-                      <span className="fw-bold" style={{ color: "#dc3545" }}>
-                        <i className="bi bi-bell me-2"></i>
-                        Request Updates
-                      </span>
-                      {updatesCount > 0 && (
-                        <button 
-                          className="btn btn-sm btn-link text-decoration-none"
-                          onClick={markAllUpdatesAsRead}
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                    </li>
-                    <li><hr className="dropdown-divider" /></li>
-
-                    {updatesCount === 0 ? (
-                      <li className="px-3 py-4 text-center text-muted">
-                        <i className="bi bi-bell" style={{ fontSize: "2rem" }}></i>
-                        <p className="mb-0 mt-2 small">No new updates</p>
-                      </li>
-                    ) : (
-                      <>
-                        {requestUpdates.map((request) => (
-                          <li key={request.id}>
-                            <a
-                              href="#"
-                              className="dropdown-item notification-item"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleUpdateClick(request);
-                              }}
-                            >
-                              <div className="d-flex align-items-start gap-2">
-                                <img
-                                  src={request.items?.image || getPlaceholderImage(request.items?.id)}
-                                  alt={request.items?.name}
-                                  className="rounded"
-                                  style={{ width: "50px", height: "50px", objectFit: "cover" }}
-                                  onError={(e) => { e.target.src = getPlaceholderImage(request.items?.id); }}
-                                />
-                                <div className="flex-grow-1">
-                                  <p className="mb-1 fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>
-                                    Request {request.status === 'approved' ? 'Approved' : 'Rejected'}
-                                  </p>
-                                  <p className="mb-1 text-muted small">
-                                    <strong>{request.items?.name}</strong>
-                                  </p>
-                                  <small className="text-muted">
-                                    <i className="bi bi-clock me-1"></i>
-                                    {new Date(request.last_status_change || request.created_at).toLocaleDateString()}
-                                  </small>
-                                </div>
-                                <span className={`badge ${request.status === 'approved' ? 'bg-success' : 'bg-danger'}`}>
-                                  {request.status === 'approved' ? '✓' : '✗'}
-                                </span>
-                              </div>
-                            </a>
-                            <hr className="dropdown-divider" />
-                          </li>
-                        ))}
-                        <li>
-                          <Link 
-                            className="dropdown-item text-center text-primary fw-semibold"
-                            to="/requests"
-                          >
-                            View All Updates →
-                          </Link>
-                        </li>
-                      </>
-                    )}
-                  </ul>
-                </li>
-
-                {/* User Info Dropdown */}
-                <li className="nav-item dropdown ms-2">
-                  <button
-                    className="nav-link dropdown-toggle d-flex align-items-center btn btn-link p-1"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                    style={{ textDecoration: "none" }}
-                  >
-                    <i className="bi bi-person-circle me-1" style={{ fontSize: "1.4rem" }}></i>
-                    <span className="d-none d-lg-inline" style={{ fontSize: "0.9rem" }}>{getUserName()}</span>
-                  </button>
-
-                  <ul className="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <span className="dropdown-item-text">
-                        <small className="text-muted">Signed in as</small>
-                        <br />
-                        <strong>{user.email}</strong>
-                      </span>
-                    </li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li>
-                      <Link className="dropdown-item" to="/profile">
-                        <i className="bi bi-gear me-2"></i>
-                        My Profile
-                      </Link>
-                    </li>
-                    <li>
-                      <Link className="dropdown-item" to="/products">
-                        <i className="bi bi-grid me-2"></i>
-                        My Items
-                      </Link>
-                    </li>
-                    <li>
-                      <Link className="dropdown-item" to="/manage-requests">
-                        <i className="bi bi-inbox me-2"></i>
-                        Manage Requests
-                      </Link>
-                    </li>
-                    <li>
-                      <Link className="dropdown-item" to="/requests">
-                        <i className="bi bi-bell me-2"></i>
-                        My Request Status
-                      </Link>
-                    </li>
-                    <li>
-                      <Link className="dropdown-item" to="/cart">
-                        <i className="bi bi-heart me-2"></i>
-                        Saved Items
-                      </Link>
-                    </li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li>
-                      <button 
-                        className="dropdown-item text-danger" 
-                        onClick={handleLogout}
-                      >
-                        <i className="bi bi-box-arrow-right me-2"></i>
-                        Logout
-                      </button>
-                    </li>
-                  </ul>
-                </li>
-              </>
-            ) : (
-              <li className="nav-item ms-2">
-                <Link 
-                  to="/login" 
-                  className="btn btn-primary px-3 py-1"
-                  style={{ backgroundColor: "#003087", border: "none", fontSize: "0.9rem" }}
-                >
-                  Login
+            <ul className="navbar-nav ms-auto align-items-center gap-1">
+              <li className="nav-item">
+                <Link className="nav-link fw-semibold px-2" to="/">
+                  Home
                 </Link>
               </li>
-            )}
-          </ul>
+
+              <li className="nav-item">
+                <Link className="nav-link fw-semibold px-2" to="/products">
+                  Browse
+                </Link>
+              </li>
+
+              <li className="nav-item">
+                <Link className="nav-link fw-semibold px-2" to="/about">
+                  About
+                </Link>
+              </li>
+
+              {user ? (
+                <>
+                  <li className="nav-item">
+                    <Link 
+                      className="nav-link btn text-white px-3 py-1" 
+                      to="/post"
+                      style={{ backgroundColor: "#7FD856", border: "none", fontSize: "0.9rem", whiteSpace: "nowrap" }}
+                    >
+                      + Post
+                    </Link>
+                  </li>
+
+                  <li className="nav-item ms-2">
+                    <Link className="nav-link position-relative p-1" to="/cart">
+                      <i className="bi bi-heart" style={{ fontSize: "1.4rem" }}></i>
+                    </Link>
+                  </li>
+
+                  {/* GREEN Notification - Incoming Requests */}
+                  <li className="nav-item dropdown ms-2">
+                    <button
+                      className="nav-link position-relative btn btn-link p-1"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      style={{ textDecoration: "none" }}
+                    >
+                      <i className="bi bi-inbox-fill" style={{ fontSize: "1.4rem", color: "#28a745" }}></i>
+                      {incomingCount > 0 && (
+                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" style={{ fontSize: "0.65rem" }}>
+                          {incomingCount}
+                          <span className="visually-hidden">unread incoming requests</span>
+                        </span>
+                      )}
+                    </button>
+
+                    <ul className="dropdown-menu dropdown-menu-end notification-dropdown" style={{ width: "350px", maxHeight: "400px", overflowY: "auto" }}>
+                      <li className="dropdown-header d-flex justify-content-between align-items-center">
+                        <span className="fw-bold" style={{ color: "#28a745" }}>
+                          <i className="bi bi-inbox me-2"></i>
+                          Incoming Requests
+                        </span>
+                        {incomingCount > 0 && (
+                          <button 
+                            className="btn btn-sm btn-link text-decoration-none"
+                            onClick={markAllIncomingAsRead}
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </li>
+                      <li><hr className="dropdown-divider" /></li>
+
+                      {incomingCount === 0 ? (
+                        <li className="px-3 py-4 text-center text-muted">
+                          <i className="bi bi-inbox" style={{ fontSize: "2rem" }}></i>
+                          <p className="mb-0 mt-2 small">No new requests</p>
+                        </li>
+                      ) : (
+                        <>
+                          {incomingRequests.map((request) => (
+                            <li key={request.id}>
+                              <a
+                                href="#"
+                                className="dropdown-item notification-item"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleIncomingClick(request);
+                                }}
+                              >
+                                <div className="d-flex align-items-start gap-2">
+                                  <img
+                                    src={request.item_image || getPlaceholderImage(request.item_id)}
+                                    alt={request.item_name}
+                                    className="rounded"
+                                    style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                                    onError={(e) => { e.target.src = getPlaceholderImage(request.item_id); }}
+                                  />
+                                  <div className="flex-grow-1">
+                                    <p className="mb-1 fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>
+                                      {request.requester_name} is interested
+                                    </p>
+                                    <p className="mb-1 text-muted small">
+                                      in your <strong>{request.item_name}</strong>
+                                    </p>
+                                    <small className="text-muted">
+                                      <i className="bi bi-clock me-1"></i>
+                                      {new Date(request.created_at).toLocaleDateString()}
+                                    </small>
+                                  </div>
+                                  <span className="badge bg-success-subtle text-success">NEW</span>
+                                </div>
+                              </a>
+                              <hr className="dropdown-divider" />
+                            </li>
+                          ))}
+                          <li>
+                            <Link 
+                              className="dropdown-item text-center text-primary fw-semibold"
+                              to="/manage-requests"
+                            >
+                              View All Requests →
+                            </Link>
+                          </li>
+                        </>
+                      )}
+                    </ul>
+                  </li>
+
+                  {/* RED Notification - Request Updates */}
+                  <li className="nav-item dropdown ms-2">
+                    <button
+                      className="nav-link position-relative btn btn-link p-1"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      style={{ textDecoration: "none" }}
+                    >
+                      <i className="bi bi-bell-fill" style={{ fontSize: "1.4rem", color: "#dc3545" }}></i>
+                      {updatesCount > 0 && (
+                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: "0.65rem" }}>
+                          {updatesCount}
+                          <span className="visually-hidden">unread updates</span>
+                        </span>
+                      )}
+                    </button>
+
+                    <ul className="dropdown-menu dropdown-menu-end notification-dropdown" style={{ width: "350px", maxHeight: "400px", overflowY: "auto" }}>
+                      <li className="dropdown-header d-flex justify-content-between align-items-center">
+                        <span className="fw-bold" style={{ color: "#dc3545" }}>
+                          <i className="bi bi-bell me-2"></i>
+                          Request Updates
+                        </span>
+                        {updatesCount > 0 && (
+                          <button 
+                            className="btn btn-sm btn-link text-decoration-none"
+                            onClick={markAllUpdatesAsRead}
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </li>
+                      <li><hr className="dropdown-divider" /></li>
+
+                      {updatesCount === 0 ? (
+                        <li className="px-3 py-4 text-center text-muted">
+                          <i className="bi bi-bell" style={{ fontSize: "2rem" }}></i>
+                          <p className="mb-0 mt-2 small">No new updates</p>
+                        </li>
+                      ) : (
+                        <>
+                          {requestUpdates.map((request) => (
+                            <li key={request.id}>
+                              <a
+                                href="#"
+                                className="dropdown-item notification-item"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleUpdateClick(request);
+                                }}
+                              >
+                                <div className="d-flex align-items-start gap-2">
+                                  <img
+                                    src={request.items?.image || getPlaceholderImage(request.items?.id)}
+                                    alt={request.items?.name}
+                                    className="rounded"
+                                    style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                                    onError={(e) => { e.target.src = getPlaceholderImage(request.items?.id); }}
+                                  />
+                                  <div className="flex-grow-1">
+                                    <p className="mb-1 fw-semibold text-dark" style={{ fontSize: "0.9rem" }}>
+                                      Request {request.status === 'approved' ? 'Approved' : 'Rejected'}
+                                    </p>
+                                    <p className="mb-1 text-muted small">
+                                      <strong>{request.items?.name}</strong>
+                                    </p>
+                                    <small className="text-muted">
+                                      <i className="bi bi-clock me-1"></i>
+                                      {new Date(request.last_status_change || request.created_at).toLocaleDateString()}
+                                    </small>
+                                  </div>
+                                  <span className={`badge ${request.status === 'approved' ? 'bg-success' : 'bg-danger'}`}>
+                                    {request.status === 'approved' ? '✓' : '✗'}
+                                  </span>
+                                </div>
+                              </a>
+                              <hr className="dropdown-divider" />
+                            </li>
+                          ))}
+                          <li>
+                            <Link 
+                              className="dropdown-item text-center text-primary fw-semibold"
+                              to="/requests"
+                            >
+                              View All Updates →
+                            </Link>
+                          </li>
+                        </>
+                      )}
+                    </ul>
+                  </li>
+
+                  {/* User Info Dropdown */}
+                  <li className="nav-item dropdown ms-2">
+                    <button
+                      className="nav-link dropdown-toggle d-flex align-items-center btn btn-link p-1"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      style={{ textDecoration: "none" }}
+                    >
+                      <i className="bi bi-person-circle me-1" style={{ fontSize: "1.4rem" }}></i>
+                      <span className="d-none d-lg-inline" style={{ fontSize: "0.9rem" }}>{getUserName()}</span>
+                    </button>
+
+                    <ul className="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <span className="dropdown-item-text">
+                          <small className="text-muted">Signed in as</small>
+                          <br />
+                          <strong>{user.email}</strong>
+                        </span>
+                      </li>
+                      <li><hr className="dropdown-divider" /></li>
+                      <li>
+                        <Link className="dropdown-item" to="/profile">
+                          <i className="bi bi-gear me-2"></i>
+                          My Profile
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/products">
+                          <i className="bi bi-grid me-2"></i>
+                          My Items
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/manage-requests">
+                          <i className="bi bi-inbox me-2"></i>
+                          Manage Requests
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/requests">
+                          <i className="bi bi-bell me-2"></i>
+                          My Request Status
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/cart">
+                          <i className="bi bi-heart me-2"></i>
+                          Saved Items
+                        </Link>
+                      </li>
+                      <li><hr className="dropdown-divider" /></li>
+                      <li>
+                        <button 
+                          className="dropdown-item text-danger" 
+                          onClick={handleLogout}
+                        >
+                          <i className="bi bi-box-arrow-right me-2"></i>
+                          Logout
+                        </button>
+                      </li>
+                    </ul>
+                  </li>
+                </>
+              ) : (
+                <li className="nav-item ms-2">
+                  <Link 
+                    to="/login" 
+                    className="btn btn-primary px-3 py-1"
+                    style={{ backgroundColor: "#003087", border: "none", fontSize: "0.9rem" }}
+                  >
+                    Login
+                  </Link>
+                </li>
+              )}
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -488,7 +509,12 @@ function Navbar() {
           background-color: #e9ecef;
         }
 
-        /* Compact navbar */
+        /* Compact navbar - REDUCED PADDING */
+        .navbar {
+          border-bottom: 1px solid #f0f0f0;
+          padding: 0.3rem 0 !important;
+        }
+
         .navbar-nav {
           gap: 0.25rem;
         }
@@ -499,28 +525,27 @@ function Navbar() {
           white-space: nowrap;
         }
 
-        /* ✅ FIXED: Compact search - always shows button */
-        .compact-search {
-          min-width: 160px;
-          max-width: 160px;
-          transition: max-width 0.3s ease;
+        .navbar-brand {
+          padding: 0 !important;
         }
 
-        .compact-search:focus-within {
-          max-width: 240px;
+        /* Centered search bar */
+        .compact-search {
+          min-width: 200px;
+          max-width: 300px;
         }
 
         .compact-search-input {
           border-radius: 50px 0 0 50px;
-          padding: 5px 10px;
-          font-size: 13px;
+          padding: 6px 14px;
+          font-size: 14px;
           border: 1px solid #e0e0e0;
           border-right: none;
         }
 
         .compact-search-btn {
           border-radius: 0 50px 50px 0;
-          padding: 5px 12px;
+          padding: 6px 14px;
           background: white;
           border: 1px solid #e0e0e0;
           border-left: none;
@@ -532,16 +557,11 @@ function Navbar() {
         }
 
         .compact-search-input::placeholder {
-          font-size: 12px;
+          font-size: 13px;
         }
 
         .navbar .input-group {
           flex-wrap: nowrap;
-        }
-
-        .navbar {
-          border-bottom: 1px solid #f0f0f0;
-          padding: 0.5rem 0;
         }
 
         .nav-link {
@@ -592,7 +612,6 @@ function Navbar() {
 
           .compact-search {
             max-width: 100%;
-            margin-bottom: 0.5rem;
           }
         }
       `}</style>
