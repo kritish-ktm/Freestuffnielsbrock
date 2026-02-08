@@ -77,7 +77,7 @@ function Footer() {
             <h6 className="mb-3">Contact Us</h6>
             <p className="text-white mb-2">
               <i className="bi bi-envelope me-2"></i>
-              <a href="freestuffnbcbc@gmail.com" className="text-white text-decoration-none hover-link">
+              <a href="mailto:freestuffnbcbc@gmail.com" className="text-white text-decoration-none hover-link">
                 freestuffnbcbc@gmail.com
               </a>
             </p>
@@ -85,7 +85,7 @@ function Footer() {
               <i className="bi bi-geo-alt me-2"></i>
               Copenhagen, Denmark
             </p>
-
+{/*}
             <h6 className="mb-3">Follow Us</h6>
             <div>
               <a href="https://www.facebook.com/brockbook" className="text-white me-3 social-link" target="_blank" rel="noopener noreferrer" title="Facebook">
@@ -97,7 +97,7 @@ function Footer() {
               <a href="https://twitter.com/nielsbrock" className="text-white social-link" target="_blank" rel="noopener noreferrer" title="Twitter">
                 <i className="bi bi-twitter" style={{ fontSize: "1.5rem" }}></i>
               </a>
-            </div>
+            </div>*/}
           </div>
         </div>
 
@@ -119,7 +119,7 @@ function Footer() {
         }
 
         .hover-link:hover {
-          color: #5BA3D0 !important;
+          color: #7FD856 !important;
         }
 
         .social-link {
@@ -133,7 +133,17 @@ function Footer() {
         }
 
         footer {
-          background: linear-gradient(135deg, #0d1b2a 0%, #1a2332 100%);
+          background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1f3d1f 100%);
+          box-shadow: 0 -4px 20px rgba(127, 216, 86, 0.1);
+        }
+
+        h5, h6 {
+          color: #7FD856 !important;
+        }
+
+        hr {
+          opacity: 0.3;
+          border-color: #7FD856 !important;
         }
       `}</style>
     </footer>

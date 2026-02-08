@@ -8,10 +8,9 @@ function Navbar() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ✅ NEW: hide/show on scroll
+  // ✅ UPDATED: hide navbar on scroll down, only show when at top
   const [isHidden, setIsHidden] = useState(false);
   const lastScrollY = useRef(0);
-  const ticking = useRef(false);
 
   const {
     incomingRequests,
@@ -25,39 +24,45 @@ function Navbar() {
   } = useNotifications();
 
   useEffect(() => {
-    lastScrollY.current = window.scrollY || 0;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
 
-    const onScroll = () => {
-      const currentY = window.scrollY || 0;
-
-      if (!ticking.current) {
-        window.requestAnimationFrame(() => {
-          const diff = currentY - lastScrollY.current;
-
-          // small threshold to prevent jitter
-          const THRESHOLD = 8;
-
-          if (Math.abs(diff) > THRESHOLD) {
-            // scrolling down => hide
-            if (diff > 0 && currentY > 80) {
-              setIsHidden(true);
-            }
-            // scrolling up => show
-            if (diff < 0) {
-              setIsHidden(false);
-            }
-            lastScrollY.current = currentY;
-          }
-
-          ticking.current = false;
-        });
-
-        ticking.current = true;
+      // If at the very top (0-10px), always show navbar
+      if (currentScrollY < 10) {
+        setIsHidden(false);
+      } 
+      // If scrolling down and past 80px, hide navbar
+      else if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
+        setIsHidden(true);
       }
+      // Don't show on scroll up unless at the very top
+
+      lastScrollY.current = currentScrollY;
+
+      // ✅ CLOSE ALL DROPDOWNS ON ANY SCROLL - they stay closed
+      // Find all dropdown toggles and close them
+      const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+      dropdownToggles.forEach(toggle => {
+        // Remove the 'show' class and aria-expanded
+        toggle.classList.remove('show');
+        toggle.setAttribute('aria-expanded', 'false');
+        
+        // Find and close the associated dropdown menu
+        const dropdownMenu = toggle.nextElementSibling;
+        if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+          dropdownMenu.classList.remove('show');
+        }
+      });
+
+      // Also close any open dropdowns using Bootstrap's method
+      const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+      openDropdowns.forEach(dropdown => {
+        dropdown.classList.remove('show');
+      });
     };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleLogout = async () => {
@@ -118,7 +123,7 @@ function Navbar() {
         {/* Brand/Logo */}
         <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
           <img 
-            src="/freestuffnielsbrocklogo.png" 
+            src="/freestuffnielsbrocklogo.png?v=2" 
             alt="Free Stuff Niels Brock" 
             height="45"
             style={{ objectFit: "contain" }}
@@ -138,7 +143,7 @@ function Navbar() {
 
         {/* Nav Links */}
         <div className="collapse navbar-collapse" id="navbarNav">
-          {/* Compact Search */}
+          {/* Compact Search - FIXED to always show button */}
           <form
             className="d-flex align-items-center mx-3 compact-search"
             onSubmit={handleSearch}
@@ -493,28 +498,36 @@ function Navbar() {
           white-space: nowrap;
         }
 
-        /* Compact search */
+        /* ✅ FIXED: Compact search - always shows button */
         .compact-search {
-          max-width: 120px;
+          min-width: 160px;
+          max-width: 160px;
           transition: max-width 0.3s ease;
         }
 
         .compact-search:focus-within {
-          max-width: 220px;
+          max-width: 240px;
         }
 
         .compact-search-input {
           border-radius: 50px 0 0 50px;
           padding: 5px 10px;
           font-size: 13px;
-          transition: width 0.3s ease;
+          border: 1px solid #e0e0e0;
+          border-right: none;
         }
 
         .compact-search-btn {
           border-radius: 0 50px 50px 0;
-          padding: 5px 10px;
+          padding: 5px 12px;
           background: white;
           border: 1px solid #e0e0e0;
+          border-left: none;
+          flex-shrink: 0;
+        }
+
+        .compact-search-btn:hover {
+          background-color: #f8f9fa;
         }
 
         .compact-search-input::placeholder {
@@ -575,10 +588,15 @@ function Navbar() {
           .navbar-nav .nav-link {
             padding: 0.5rem 1rem !important;
           }
+
+          .compact-search {
+            max-width: 100%;
+            margin-bottom: 0.5rem;
+          }
         }
       `}</style>
     </nav>
   );
 }
 
-export default Navbar; 
+export default Navbar;
