@@ -134,46 +134,48 @@ function Login() {
         }
         @keyframes cardEntry { to{opacity:1;transform:translateY(0)} }
 
-        /* ── Logo: blue + green glow, actual logo image, no extra icon ── */
+        /* ── Logo: blue + green glow, actual logo image, white bg so it's visible ── */
         .logo-wrap {
           display:flex; align-items:center; justify-content:center;
           margin: 0 auto 1.5rem;
-          width:96px; height:96px;
+          width:116px; height:116px;
           border-radius:50%;
           position:relative;
           animation:fadeUp 0.6s 0.1s ease both;
         }
-        .logo-wrap::before {
-          content:'';
+        /* Spinning conic ring */
+        .logo-spin-ring {
           position:absolute; inset:-3px; border-radius:50%;
           background:conic-gradient(from 0deg, #003087, #00a9e0, #7FD856, #3ddc6e, #00a9e0, #003087);
           animation:logoSpin 3s linear infinite;
           z-index:0;
         }
-        .logo-wrap::after {
-          content:'';
+        /* White background circle so dark logo is visible */
+        .logo-bg {
           position:absolute; inset:3px; border-radius:50%;
-          background:#04091a;
+          background:#ffffff;
           z-index:1;
+          box-shadow: inset 0 2px 8px rgba(0,0,0,0.08);
         }
+        /* Outer glow - green */
         .logo-glow {
-          position:absolute; inset:-14px; border-radius:50%;
-          background:radial-gradient(circle, rgba(127,216,86,0.28) 0%, rgba(0,48,135,0.32) 45%, transparent 70%);
+          position:absolute; inset:-18px; border-radius:50%;
+          background:radial-gradient(circle, rgba(127,216,86,0.3) 0%, rgba(0,48,135,0.25) 45%, transparent 70%);
           animation:glowPulse 2.5s ease-in-out infinite;
           z-index:0;
         }
+        /* Inner glow - blue */
         .logo-glow-2 {
-          position:absolute; inset:-6px; border-radius:50%;
-          background:radial-gradient(circle, rgba(0,169,224,0.22) 0%, transparent 65%);
+          position:absolute; inset:-8px; border-radius:50%;
+          background:radial-gradient(circle, rgba(0,169,224,0.2) 0%, transparent 65%);
           animation:glowPulse 2.5s 1.25s ease-in-out infinite;
           z-index:0;
         }
         .logo-img {
           position:relative; z-index:2;
-          width:68px; height:68px;
+          width:82px; height:82px;
           object-fit:contain;
           border-radius:50%;
-          filter:drop-shadow(0 0 8px rgba(127,216,86,0.55)) drop-shadow(0 0 18px rgba(0,169,224,0.35));
         }
         @keyframes logoSpin { to{transform:rotate(360deg)} }
         @keyframes glowPulse {
@@ -264,10 +266,12 @@ function Login() {
 
         <div className="login-card">
 
-          {/* Logo — actual brand image with blue+green glow, no extra icons */}
+          {/* Logo — white bg so logo is visible on dark, with blue+green glow ring */}
           <div className="logo-wrap">
             <div className="logo-glow" />
             <div className="logo-glow-2" />
+            <div className="logo-spin-ring" />
+            <div className="logo-bg" />
             <img src="/freestuffnielsbrocklogo.png?v=2" alt="Free Stuff Niels Brock" className="logo-img" />
           </div>
 
