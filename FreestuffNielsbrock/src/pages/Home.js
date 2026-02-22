@@ -150,6 +150,7 @@ function Home() {
   useEffect(() => {
     fetchLatestItems();
     fetchCommunityComments();
+    fetchRealStats();
   }, []);
 
   const fetchLatestItems = async () => {
@@ -170,6 +171,35 @@ function Home() {
       setLoading(false);
     }
   };
+
+  const fetchRealStats = async () => {
+    try {
+      // Total items ever posted
+      const { count: totalItems } = await supabase
+        .from("items")
+        .select("*", { count: "exact", head: true });
+
+      // Total donated items
+      const { count: donatedItems } = await supabase
+        .from("items")
+        .select("*", { count: "exact", head: true })
+        .eq("is_donated", true);
+
+      // Total unique students (from user_profiles)
+      const { count: totalStudents } = await supabase
+        .from("user_profiles")
+        .select("*", { count: "exact", head: true });
+
+      setRealStats({
+        total: totalItems || 0,
+        donated: donatedItems || 0,
+        students: totalStudents || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching real stats:", error);
+    }
+  };
+
 
   const fetchCommunityComments = async () => {
     try {
@@ -485,26 +515,28 @@ function Home() {
       <section className="py-5 bg-light">
         <div className="container" ref={stats.ref}>
           <div className="row text-center">
+
             <div className={`col-md-4 mb-4 stat-reveal ${stats.show ? "show delay-1" : ""}`}>
               <h2 className="display-4 fw-bold" style={{ color: "#003087" }}>
-                {latestItems.length > 0 ? `${latestItems.length * 10}+` : "0"}
+                {realStats.total > 0 ? `${realStats.total}+` : "0"}
               </h2>
               <p className="text-muted">Items Shared</p>
             </div>
 
             <div className={`col-md-4 mb-4 stat-reveal ${stats.show ? "show delay-2" : ""}`}>
+              <h2 className="display-4 fw-bold" style={{ color: "#7FD856" }}>
+                {realStats.donated > 0 ? `${realStats.donated}` : "0"}
+              </h2>
+              <p className="text-muted">Items Donated</p>
+            </div>
+
+            <div className={`col-md-4 mb-4 stat-reveal ${stats.show ? "show delay-3" : ""}`}>
               <h2 className="display-4 fw-bold" style={{ color: "#00A9E0" }}>
-                50+
+                {realStats.students > 0 ? `${realStats.students}+` : "0"}
               </h2>
               <p className="text-muted">Active Students</p>
             </div>
 
-            <div className={`col-md-4 mb-4 stat-reveal ${stats.show ? "show delay-3" : ""}`}>
-              <h2 className="display-4 fw-bold" style={{ color: "#D4AF37" }}>
-                100%
-              </h2>
-              <p className="text-muted">Free to Use</p>
-            </div>
           </div>
         </div>
       </section>
