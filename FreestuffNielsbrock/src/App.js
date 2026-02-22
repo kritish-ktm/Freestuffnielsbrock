@@ -27,11 +27,13 @@ import Requests from "./pages/Requests";
 import {AuthProvider} from "./context/AuthContext"; 
 import {NotificationProvider} from "./context/NotificationContext"; 
 import EditItem from "./pages/EditItem";
+import CookieBanner from "./components/CookieBanner";
 function App() {
   return (
     <>
     <AuthProvider>
     <NotificationProvider>  
+    <CookieBanner />
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />

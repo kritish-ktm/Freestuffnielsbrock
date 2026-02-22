@@ -5,376 +5,349 @@ import { useNavigate, Link } from "react-router-dom";
 
 function Login() {
   const { signInWithEmail, signInWithMagicLink, user, loading: authLoading } = useAuth();
-
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loginMethod, setLoginMethod] = useState("magiclink"); // Default to magic link
-  
+  const [loginMethod, setLoginMethod] = useState("magiclink");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    const pts = Array.from({ length: 18 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 6 + 3,
+      duration: Math.random() * 8 + 6,
+      delay: Math.random() * 5,
+      opacity: Math.random() * 0.18 + 0.05,
+    }));
+    setParticles(pts);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && user) {
       const fullName = user.user_metadata?.full_name;
       const section = user.user_metadata?.section;
-
-      if (fullName && section) {
-        navigate("/", { replace: true });
-      } else {
-        navigate("/onboarding", { replace: true });
-      }
+      if (fullName && section) navigate("/", { replace: true });
+      else navigate("/onboarding", { replace: true });
     }
   }, [user, authLoading, navigate]);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      setError("Please enter both email and password");
-      return;
-    }
-
+    if (!email || !password) { setError("Please enter both email and password"); return; }
+    if (!agreedToTerms) { setError("Please agree to the Terms & Conditions to continue"); return; }
     try {
-      setLoading(true);
-      setError("");
+      setLoading(true); setError("");
       await signInWithEmail(email, password);
-    } catch (loginError) {
-      console.error("Login failed:", loginError);
-      setError(loginError.message || "Login failed. Please check your credentials.");
+    } catch (err) {
+      setError(err.message || "Login failed. Please check your credentials.");
       setLoading(false);
     }
   };
 
   const handleMagicLink = async (e) => {
     e.preventDefault();
-    
-    if (!email) {
-      setError("Please enter your email");
-      return;
+    if (!email) { setError("Please enter your email"); return; }
+    if (!email.toLowerCase().endsWith("@edu.nielsbrock.dk")) {
+      setError("Please use your Niels Brock student email (@edu.nielsbrock.dk)"); return;
     }
-
-    // Check if it's a Niels Brock email
-    if (!email.toLowerCase().endsWith('@edu.nielsbrock.dk')) {
-      setError("Please use your Niels Brock student email (@edu.nielsbrock.dk)");
-      return;
-    }
-
+    if (!agreedToTerms) { setError("Please agree to the Terms & Conditions to continue"); return; }
     try {
-      setLoading(true);
-      setError("");
-      setSuccess("");
+      setLoading(true); setError(""); setSuccess("");
       await signInWithMagicLink(email);
-      setSuccess("✅ Magic link sent! Check your email inbox (and spam folder).");
-      setEmail(""); // Clear email field
+      setSuccess("Magic link sent! Check your email inbox (and spam folder).");
+      setEmail("");
       setLoading(false);
-    } catch (loginError) {
-      console.error("Magic link failed:", loginError);
-      setError(loginError.message || "Failed to send magic link. Please try again.");
+    } catch (err) {
+      setError(err.message || "Failed to send magic link. Please try again.");
       setLoading(false);
     }
   };
 
-  if (authLoading) {
-    return null;
-  }
-
-  if (user) {
-    return null;
-  }
+  if (authLoading) return null;
+  if (user) return null;
 
   return (
-    <div 
-      className="min-vh-100 d-flex align-items-center justify-content-center position-relative overflow-hidden"
-      style={{
-        background: "linear-gradient(135deg, #1a2332 0%, #2d4563 50%, #3d5a80 100%)",
-      }}
-    >
-      {/* Animated Background Shapes */}
-      <div className="position-absolute w-100 h-100" style={{ zIndex: 0 }}>
-        <div 
-          className="position-absolute rounded-circle"
-          style={{
-            width: "300px",
-            height: "300px",
-            background: "rgba(255, 255, 255, 0.05)",
-            top: "-100px",
-            left: "-100px",
-            animation: "float 6s ease-in-out infinite"
-          }}
-        ></div>
-        <div 
-          className="position-absolute rounded-circle"
-          style={{
-            width: "200px",
-            height: "200px",
-            background: "rgba(255, 255, 255, 0.05)",
-            bottom: "-50px",
-            right: "-50px",
-            animation: "float 8s ease-in-out infinite"
-          }}
-        ></div>
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-      <div 
-        className="card shadow-lg border-0 rounded-4 position-relative"
-        style={{ 
-          maxWidth: "450px", 
-          width: "90%",
-          zIndex: 1,
-          background: "white"
-        }}
-      >
-        <div className="card-body p-5">
+        .login-root {
+          min-height: 100vh;
+          display: flex; align-items: center; justify-content: center;
+          position: relative; overflow: hidden;
+          background: #04091a;
+          font-family: 'DM Sans', sans-serif;
+        }
 
-          {/* Logo Container */}
-          <div 
-            className="mb-4 mx-auto d-flex align-items-center justify-content-center rounded-circle"
-            style={{
-              width: "100px",
-              height: "100px",
-              background: "linear-gradient(135deg, #003087 0%, #005fa3 100%)",
-              boxShadow: "0 4px 15px rgba(0, 48, 135, 0.2)"
-            }}
-          >
-            <img
-              src="/logo192.png"
-              alt="Free Stuff Niels Brock"
-              height="65"
-              style={{ objectFit: "contain" }}
-            />
+        .mesh-bg {
+          position: absolute; inset: 0;
+          background:
+            radial-gradient(ellipse 80% 60% at 20% 20%, rgba(0,48,135,0.5) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 50% at 80% 80%, rgba(0,95,163,0.35) 0%, transparent 55%),
+            radial-gradient(ellipse 50% 70% at 60% 10%, rgba(127,216,86,0.08) 0%, transparent 50%),
+            #04091a;
+          animation: meshShift 12s ease-in-out infinite alternate;
+        }
+        @keyframes meshShift {
+          0%   { filter: hue-rotate(0deg) brightness(1); }
+          50%  { filter: hue-rotate(8deg) brightness(1.06); }
+          100% { filter: hue-rotate(-5deg) brightness(0.97); }
+        }
+
+        .grid-overlay {
+          position: absolute; inset: 0;
+          background-image:
+            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+          background-size: 50px 50px;
+          animation: gridDrift 20s linear infinite;
+        }
+        @keyframes gridDrift { 0%{transform:translateY(0)} 100%{transform:translateY(50px)} }
+
+        .orb { position:absolute; border-radius:50%; filter:blur(50px); pointer-events:none; }
+        .orb-1 { width:400px; height:400px; background:radial-gradient(circle, rgba(0,95,163,0.3), transparent 70%); top:-100px; left:-100px; animation:orbFloat1 10s ease-in-out infinite; }
+        .orb-2 { width:300px; height:300px; background:radial-gradient(circle, rgba(127,216,86,0.12), transparent 70%); bottom:-80px; right:-80px; animation:orbFloat2 13s ease-in-out infinite; }
+        .orb-3 { width:220px; height:220px; background:radial-gradient(circle, rgba(0,160,255,0.15), transparent 70%); top:50%; right:8%; animation:orbFloat3 8s ease-in-out infinite; }
+        @keyframes orbFloat1 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(60px,40px) scale(1.1)} 66%{transform:translate(20px,-30px) scale(0.95)} }
+        @keyframes orbFloat2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,-60px) scale(1.15)} }
+        @keyframes orbFloat3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-40px)} }
+
+        .particle { position:absolute; border-radius:50%; background:rgba(255,255,255,0.5); pointer-events:none; animation:particleRise var(--dur) ease-in-out var(--delay) infinite; }
+        @keyframes particleRise { 0%{transform:translateY(0) scale(1);opacity:var(--op)} 50%{transform:translateY(-30px) scale(1.2);opacity:calc(var(--op)*1.5)} 100%{transform:translateY(0) scale(1);opacity:var(--op)} }
+
+        .login-card {
+          position:relative; z-index:10;
+          width:90%; max-width:460px;
+          background:rgba(255,255,255,0.04);
+          backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+          border:1px solid rgba(255,255,255,0.1);
+          border-radius:24px; padding:2.5rem;
+          box-shadow:0 0 0 1px rgba(0,95,163,0.2),0 40px 80px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);
+          animation:cardEntry 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+          opacity:0; transform:translateY(30px);
+        }
+        @keyframes cardEntry { to{opacity:1;transform:translateY(0)} }
+
+        /* ── Logo: blue + green glow, actual logo image, no extra icon ── */
+        .logo-wrap {
+          display:flex; align-items:center; justify-content:center;
+          margin: 0 auto 1.5rem;
+          width:96px; height:96px;
+          border-radius:50%;
+          position:relative;
+          animation:fadeUp 0.6s 0.1s ease both;
+        }
+        .logo-wrap::before {
+          content:'';
+          position:absolute; inset:-3px; border-radius:50%;
+          background:conic-gradient(from 0deg, #003087, #00a9e0, #7FD856, #3ddc6e, #00a9e0, #003087);
+          animation:logoSpin 3s linear infinite;
+          z-index:0;
+        }
+        .logo-wrap::after {
+          content:'';
+          position:absolute; inset:3px; border-radius:50%;
+          background:#04091a;
+          z-index:1;
+        }
+        .logo-glow {
+          position:absolute; inset:-14px; border-radius:50%;
+          background:radial-gradient(circle, rgba(127,216,86,0.28) 0%, rgba(0,48,135,0.32) 45%, transparent 70%);
+          animation:glowPulse 2.5s ease-in-out infinite;
+          z-index:0;
+        }
+        .logo-glow-2 {
+          position:absolute; inset:-6px; border-radius:50%;
+          background:radial-gradient(circle, rgba(0,169,224,0.22) 0%, transparent 65%);
+          animation:glowPulse 2.5s 1.25s ease-in-out infinite;
+          z-index:0;
+        }
+        .logo-img {
+          position:relative; z-index:2;
+          width:68px; height:68px;
+          object-fit:contain;
+          border-radius:50%;
+          filter:drop-shadow(0 0 8px rgba(127,216,86,0.55)) drop-shadow(0 0 18px rgba(0,169,224,0.35));
+        }
+        @keyframes logoSpin { to{transform:rotate(360deg)} }
+        @keyframes glowPulse {
+          0%,100%{opacity:0.7;transform:scale(1)}
+          50%{opacity:1;transform:scale(1.1)}
+        }
+
+        .login-title { font-family:'Sora',sans-serif; font-weight:800; font-size:1.9rem; color:#fff; text-align:center; margin-bottom:0.35rem; letter-spacing:-0.5px; animation:fadeUp 0.6s 0.25s ease both; }
+        .login-sub { text-align:center; color:rgba(255,255,255,0.45); font-size:0.92rem; margin-bottom:1.8rem; animation:fadeUp 0.6s 0.35s ease both; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+        .alert-glass { border-radius:12px; font-size:0.875rem; padding:0.75rem 1rem; animation:fadeUp 0.4s ease both; margin-bottom:1rem; }
+        .alert-info-glass  { background:rgba(0,169,224,0.12); color:rgba(180,230,255,0.9); border:1px solid rgba(0,169,224,0.25); }
+        .alert-danger-glass  { background:rgba(220,53,69,0.15); color:rgba(255,180,185,0.95); border:1px solid rgba(220,53,69,0.3); }
+        .alert-success-glass { background:rgba(127,216,86,0.12); color:rgba(180,255,160,0.95); border:1px solid rgba(127,216,86,0.3); }
+
+        .form-label-white { color:rgba(255,255,255,0.7); font-size:0.85rem; font-weight:500; margin-bottom:0.4rem; display:block; }
+        .input-glass {
+          background:rgba(255,255,255,0.06) !important;
+          border:1px solid rgba(255,255,255,0.12) !important;
+          border-radius:12px !important; color:#fff !important;
+          font-size:0.95rem !important; padding:0.75rem 1rem !important;
+          transition:border-color 0.2s,box-shadow 0.2s,background 0.2s !important;
+          width:100%;
+        }
+        .input-glass::placeholder { color:rgba(255,255,255,0.3) !important; }
+        .input-glass:focus { background:rgba(255,255,255,0.09) !important; border-color:rgba(127,216,86,0.5) !important; box-shadow:0 0 0 3px rgba(127,216,86,0.12) !important; outline:none !important; }
+        .input-glass:disabled { opacity:0.5 !important; }
+
+        .terms-row {
+          display:flex; align-items:flex-start; gap:10px;
+          padding:0.875rem 1rem;
+          background:rgba(255,255,255,0.04);
+          border:1px solid rgba(255,255,255,0.1);
+          border-radius:12px; margin-bottom:1rem;
+          cursor:pointer; transition:background 0.2s, border-color 0.2s;
+        }
+        .terms-row:hover { background:rgba(127,216,86,0.06); border-color:rgba(127,216,86,0.25); }
+        .terms-checkbox { width:18px; height:18px; min-width:18px; border-radius:5px; accent-color:#7FD856; cursor:pointer; margin-top:2px; }
+        .terms-text { color:rgba(255,255,255,0.5); font-size:0.82rem; line-height:1.5; }
+        .terms-text a { color:#7FD856; text-decoration:none; font-weight:500; }
+        .terms-text a:hover { color:#a8f070; text-decoration:underline; }
+
+        .btn-primary-glow {
+          background:linear-gradient(135deg,#003087,#005fa3);
+          border:none; border-radius:12px; color:#fff;
+          font-family:'Sora',sans-serif; font-weight:600; font-size:0.95rem;
+          padding:0.8rem 1.5rem; width:100%; cursor:pointer;
+          position:relative; overflow:hidden;
+          transition:transform 0.2s,box-shadow 0.2s;
+          box-shadow:0 4px 20px rgba(0,48,135,0.4);
+        }
+        .btn-primary-glow:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,48,135,0.55),0 0 20px rgba(127,216,86,0.15); }
+        .btn-primary-glow:active:not(:disabled) { transform:translateY(0); }
+        .btn-primary-glow:disabled { opacity:0.45; cursor:not-allowed; }
+        .btn-primary-glow::after { content:''; position:absolute; top:-50%; left:-80%; width:60%; height:200%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent); transform:skewX(-20deg); animation:shimmer 3s ease-in-out infinite; }
+        @keyframes shimmer { 0%{left:-80%} 60%,100%{left:120%} }
+
+        .btn-outline-glass { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.18); border-radius:12px; color:rgba(255,255,255,0.8); font-family:'Sora',sans-serif; font-weight:500; font-size:0.92rem; padding:0.75rem 1.5rem; width:100%; cursor:pointer; transition:background 0.2s,border-color 0.2s,transform 0.2s; }
+        .btn-outline-glass:hover { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.3); transform:translateY(-1px); }
+
+        .back-link { background:none; border:none; color:rgba(255,255,255,0.5); font-size:0.875rem; cursor:pointer; padding:0; margin-bottom:1.25rem; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
+        .back-link:hover { color:rgba(255,255,255,0.9); }
+
+        .divider { display:flex; align-items:center; gap:1rem; margin:1.25rem 0; color:rgba(255,255,255,0.25); font-size:0.8rem; }
+        .divider::before,.divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.1); }
+
+        .footer-badge { margin-top:1.5rem; padding:0.6rem 1rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; text-align:center; color:rgba(255,255,255,0.35); font-size:0.8rem; }
+        .help-text { color:rgba(255,255,255,0.28); font-size:0.78rem; margin-top:0.35rem; }
+        .signup-link { text-align:center; margin-top:1.25rem; color:rgba(255,255,255,0.35); font-size:0.85rem; }
+        .signup-link a { color:#7FD856; font-weight:600; text-decoration:none; }
+        .signup-link a:hover { color:#a8f070; }
+
+        .field-row { animation:fadeUp 0.5s ease both; }
+        .field-row:nth-child(1){animation-delay:0.1s} .field-row:nth-child(2){animation-delay:0.2s} .field-row:nth-child(3){animation-delay:0.3s}
+        @media(max-width:480px){ .login-card{padding:2rem 1.5rem} .login-title{font-size:1.6rem} }
+      `}</style>
+
+      <div className="login-root">
+        <div className="mesh-bg" />
+        <div className="grid-overlay" />
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+        {particles.map((p) => (
+          <div key={p.id} className="particle" style={{ left:`${p.x}%`, top:`${p.y}%`, width:`${p.size}px`, height:`${p.size}px`, "--dur":`${p.duration}s`, "--delay":`${p.delay}s`, "--op":p.opacity }} />
+        ))}
+
+        <div className="login-card">
+
+          {/* Logo — actual brand image with blue+green glow, no extra icons */}
+          <div className="logo-wrap">
+            <div className="logo-glow" />
+            <div className="logo-glow-2" />
+            <img src="/freestuffnielsbrocklogo.png?v=2" alt="Free Stuff Niels Brock" className="logo-img" />
           </div>
 
-          {/* Title */}
-          <h1 
-            className="h2 fw-bold mb-2 text-center"
-            style={{ color: "#003087" }}
-          >
-            Welcome Back
-          </h1>
-          <p className="text-muted mb-4 text-center">
-            Sign in to Free Stuff Niels Brock
-          </p>
+          <h1 className="login-title">Welcome Back</h1>
+          <p className="login-sub">Sign in to Free Stuff Niels Brock</p>
 
-          {/* Error/Success Messages */}
-          {error && (
-            <div className="alert alert-danger alert-dismissible fade show" role="alert">
-              <i className="bi bi-exclamation-circle me-2"></i>
-              {error}
-              <button 
-                type="button" 
-                className="btn-close" 
-                onClick={() => setError("")}
-              ></button>
-            </div>
-          )}
+          {error && <div className="alert-glass alert-danger-glass"><i className="bi bi-exclamation-circle me-2"/>{error}</div>}
+          {success && <div className="alert-glass alert-success-glass"><i className="bi bi-envelope-check me-2"/>{success}</div>}
 
-          {success && (
-            <div className="alert alert-success alert-dismissible fade show" role="alert">
-              <i className="bi bi-check-circle me-2"></i>
-              {success}
-              <button 
-                type="button" 
-                className="btn-close" 
-                onClick={() => setSuccess("")}
-              ></button>
-            </div>
-          )}
-
-          {/* Magic Link Form (Default) */}
           {loginMethod === "magiclink" && (
             <>
-              <div className="alert alert-info mb-4" role="alert">
-                <small>
-                  <i className="bi bi-magic me-2"></i>
-                  <strong>Passwordless sign-in:</strong> We'll send you a secure link to sign in without a password!
-                </small>
+              <div className="alert-glass alert-info-glass">
+                <i className="bi bi-magic me-2"/>
+                <strong>Passwordless sign-in:</strong> We'll send you a secure link — no password needed!
               </div>
 
               <form onSubmit={handleMagicLink}>
-                <div className="mb-4">
-                  <label className="form-label fw-semibold">
-                    Niels Brock Student Email
-                  </label>
-                  <input
-                    type="email"
-                    className="form-control form-control-lg"
-                    placeholder="yourname@edu.nielsbrock.dk"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
-                  <small className="text-muted">
-                    <i className="bi bi-info-circle me-1"></i>
-                    Must end with @edu.nielsbrock.dk
-                  </small>
+                <div className="mb-3 field-row">
+                  <label className="form-label-white">Niels Brock Student Email</label>
+                  <input type="email" className="input-glass" placeholder="yourname@edu.nielsbrock.dk" value={email} onChange={(e)=>setEmail(e.target.value)} required disabled={loading}/>
+                  <p className="help-text"><i className="bi bi-info-circle me-1"/>Must end with @edu.nielsbrock.dk</p>
                 </div>
 
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-lg w-100 mb-3"
-                  style={{ 
-                    borderRadius: "12px", 
-                    fontWeight: "600",
-                    backgroundColor: "#003087",
-                    border: "none"
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-send me-2"></i>
-                      Send Magic Link
-                    </>
-                  )}
-                </button>
+                <div className="terms-row field-row" onClick={()=>setAgreedToTerms(!agreedToTerms)}>
+                  <input type="checkbox" className="terms-checkbox" checked={agreedToTerms} onChange={(e)=>setAgreedToTerms(e.target.checked)} onClick={(e)=>e.stopPropagation()}/>
+                  <span className="terms-text">
+                    I agree to the{" "}<Link to="/terms" onClick={(e)=>e.stopPropagation()}>Terms &amp; Conditions</Link>{" "}and{" "}<Link to="/privacy" onClick={(e)=>e.stopPropagation()}>Privacy Policy</Link>. I confirm I am a Niels Brock student and consent to cookie usage.
+                  </span>
+                </div>
+
+                <div className="field-row">
+                  <button type="submit" className="btn-primary-glow" disabled={loading||!agreedToTerms}>
+                    {loading?<><span className="spinner-border spinner-border-sm me-2"/>Sending...</>:<><i className="bi bi-send me-2"/>Send Magic Link</>}
+                  </button>
+                </div>
               </form>
 
-              {/* Divider */}
-              <div className="d-flex align-items-center my-4">
-                <hr className="flex-grow-1" />
-                <span className="px-3 text-muted small">OR</span>
-                <hr className="flex-grow-1" />
-              </div>
-
-              {/* Email/Password Button */}
-              <button
-                onClick={() => setLoginMethod("email")}
-                className="btn btn-outline-secondary btn-lg w-100"
-                style={{ borderRadius: "12px", fontWeight: "600" }}
-              >
-                <i className="bi bi-envelope me-2"></i>
-                Sign in with Email & Password
-              </button>
-
-              {/* Sign Up Link */}
-              <p className="text-center mt-4 mb-0">
-                <small className="text-muted">
-                  Don't have an account?{" "}
-                  <Link to="/signup" style={{ color: "#003087", fontWeight: "600" }}>
-                    Sign up
-                  </Link>
-                </small>
-              </p>
+              <div className="divider">OR</div>
+              <button className="btn-outline-glass" onClick={()=>setLoginMethod("email")}><i className="bi bi-envelope me-2"/>Sign in with Email &amp; Password</button>
+              <p className="signup-link">Don't have an account? <Link to="/signup">Sign up</Link></p>
             </>
           )}
 
-          {/* Email/Password Form */}
           {loginMethod === "email" && (
             <>
-              <button
-                onClick={() => {
-                  setLoginMethod("magiclink");
-                  setError("");
-                  setSuccess("");
-                }}
-                className="btn btn-link text-decoration-none mb-3 p-0"
-                style={{ color: "#003087" }}
-              >
-                <i className="bi bi-arrow-left me-2"></i>
-                Back to Magic Link
+              <button className="back-link" onClick={()=>{setLoginMethod("magiclink");setError("");setSuccess("");}}>
+                <i className="bi bi-arrow-left"/> Back to Magic Link
               </button>
-
               <form onSubmit={handleEmailLogin}>
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Email</label>
-                  <input
-                    type="email"
-                    className="form-control form-control-lg"
-                    placeholder="yourname@edu.nielsbrock.dk"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
+                <div className="mb-3 field-row">
+                  <label className="form-label-white">Email</label>
+                  <input type="email" className="input-glass" placeholder="yourname@edu.nielsbrock.dk" value={email} onChange={(e)=>setEmail(e.target.value)} required disabled={loading}/>
                 </div>
-
-                <div className="mb-4">
-                  <label className="form-label fw-semibold">Password</label>
-                  <input
-                    type="password"
-                    className="form-control form-control-lg"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                  />
+                <div className="mb-3 field-row">
+                  <label className="form-label-white">Password</label>
+                  <input type="password" className="input-glass" placeholder="Enter your password" value={password} onChange={(e)=>setPassword(e.target.value)} required disabled={loading}/>
                 </div>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-lg w-100"
-                  style={{ 
-                    borderRadius: "12px", 
-                    fontWeight: "600",
-                    backgroundColor: "#003087",
-                    border: "none"
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Signing in...
-                    </>
-                  ) : (
-                    "Sign In"
-                  )}
-                </button>
+                <div className="terms-row field-row" onClick={()=>setAgreedToTerms(!agreedToTerms)}>
+                  <input type="checkbox" className="terms-checkbox" checked={agreedToTerms} onChange={(e)=>setAgreedToTerms(e.target.checked)} onClick={(e)=>e.stopPropagation()}/>
+                  <span className="terms-text">
+                    I agree to the{" "}<Link to="/terms" onClick={(e)=>e.stopPropagation()}>Terms &amp; Conditions</Link>{" "}and{" "}<Link to="/privacy" onClick={(e)=>e.stopPropagation()}>Privacy Policy</Link>.
+                  </span>
+                </div>
+                <div className="field-row">
+                  <button type="submit" className="btn-primary-glow" disabled={loading||!agreedToTerms}>
+                    {loading?<><span className="spinner-border spinner-border-sm me-2"/>Signing in...</>:"Sign In"}
+                  </button>
+                </div>
               </form>
             </>
           )}
 
-          {/* Footer */}
-          <div className="mt-4 p-3 rounded-3 text-center" style={{ background: "#f8f9fa" }}>
-            <p className="mb-0 text-muted small">
-              <i className="bi bi-shield-check me-2" style={{ color: "#003087" }}></i>
-              <strong>Secure & Easy:</strong> No passwords to remember
-            </p>
+          <div className="footer-badge">
+            <i className="bi bi-shield-check me-2" style={{color:"#7FD856"}}/>
+            <strong style={{color:"rgba(255,255,255,0.5)"}}>Secure &amp; Easy</strong>
+            <span> · Only for Niels Brock students</span>
           </div>
-
-          <p className="mt-3 mb-0 text-muted small text-center">
-            <i className="bi bi-mortarboard-fill me-2" style={{ color: "#003087" }}></i>
-            Only for Niels Brock students
-          </p>
         </div>
       </div>
-
-      {/* CSS Animations */}
-      <style>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-20px);
-          }
-        }
-
-        .btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 20px rgba(0, 48, 135, 0.3) !important;
-        }
-
-        .btn-primary:active {
-          transform: translateY(0px);
-        }
-
-        @media (max-width: 576px) {
-          .card-body {
-            padding: 2rem !important;
-          }
-        }
-      `}</style>
-    </div>
+    </>
   );
 }
 
