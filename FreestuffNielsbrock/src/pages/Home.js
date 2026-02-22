@@ -39,6 +39,7 @@ function Home() {
   const [openFAQ, setOpenFAQ] = useState(null);
   const [communityComments, setCommunityComments] = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
+  const [realStats, setRealStats] = useState({ total: 0, donated: 0, students: 0 });
 
   // Section reveals (only animate after reaching that section on Home)
   const how = useRevealOnce(0.25);
