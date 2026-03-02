@@ -1,3 +1,4 @@
+// src/pages/Requests.js
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabase";
@@ -12,13 +13,22 @@ function Requests() {
   const [filter, setFilter] = useState('all');
   const [processingId, setProcessingId] = useState(null);
 
+  // ── Toast state ──────────────────────────────────────────────────────────
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState({ type: "", text: "" });
+
+  const showNotification = (type, text) => {
+    setToastMessage({ type, text });
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!user) return;
-
     fetchRequests();
   }, [user]);
 
-  // Mark all updates as read when component mounts
   useEffect(() => {
     if (user) {
       markAllUpdatesAsRead();
@@ -29,7 +39,6 @@ function Requests() {
     setLoading(true);
 
     try {
-      // Get requests made BY the current user (not FOR the user's items)
       const { data, error } = await supabase
         .from("requests")
         .select(`
@@ -48,7 +57,6 @@ function Requests() {
 
       if (error) throw error;
 
-      // Fetch item details
       const requestsWithItems = await Promise.all(
         (data || []).map(async (req) => {
           const { data: itemData } = await supabase
@@ -57,16 +65,12 @@ function Requests() {
             .eq("id", req.item_id)
             .single();
 
-          return {
-            ...req,
-            items: itemData
-          };
+          return { ...req, items: itemData };
         })
       );
 
       setRequests(requestsWithItems);
 
-      // Mark unread updates as read
       const unreadIds = requestsWithItems
         .filter(req => !req.read_by_requester && (req.status === 'approved' || req.status === 'rejected'))
         .map(req => req.id);
@@ -76,13 +80,12 @@ function Requests() {
           .from("requests")
           .update({ read_by_requester: true })
           .in("id", unreadIds);
-        
-        // Refresh notifications
+
         refreshNotifications();
       }
     } catch (error) {
       console.error("Error fetching requests:", error);
-      alert("Failed to load requests");
+      showNotification("error", "Failed to load requests");
     } finally {
       setLoading(false);
     }
@@ -108,15 +111,17 @@ function Requests() {
 
       if (error) throw error;
 
-      setRequests(requests.map(req => 
+      setRequests(requests.map(req =>
         req.id === requestId ? { ...req, status: newStatus } : req
       ));
 
-      alert(`✅ Request ${newStatus} successfully!`);
+      // ✅ Replaced: alert(`✅ Request ${newStatus} successfully!`)
+      showNotification("success", `Request ${newStatus} successfully!`);
       refreshNotifications();
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("❌ Failed to update request");
+      // ✅ Replaced: alert("❌ Failed to update request")
+      showNotification("error", "Failed to update request");
     } finally {
       setProcessingId(null);
     }
@@ -136,11 +141,13 @@ function Requests() {
       if (error) throw error;
 
       setRequests(requests.filter(req => req.id !== requestId));
-      alert("✅ Request deleted successfully!");
+      // ✅ Replaced: alert("✅ Request deleted successfully!")
+      showNotification("success", "Request deleted successfully!");
       refreshNotifications();
     } catch (error) {
       console.error("Error deleting request:", error);
-      alert("❌ Failed to delete request");
+      // ✅ Replaced: alert("❌ Failed to delete request")
+      showNotification("error", "Failed to delete request");
     } finally {
       setProcessingId(null);
     }
@@ -152,8 +159,8 @@ function Requests() {
     return `https://via.placeholder.com/300x200/${color}/ffffff?text=Item`;
   };
 
-  const filteredRequests = filter === 'all' 
-    ? requests 
+  const filteredRequests = filter === 'all'
+    ? requests
     : requests.filter(req => req.status === filter);
 
   const counts = {
@@ -200,8 +207,8 @@ function Requests() {
             Track status updates on items you're interested in
           </p>
         </div>
-        <button 
-          onClick={fetchRequests} 
+        <button
+          onClick={fetchRequests}
           className="btn btn-outline-primary"
           disabled={loading}
         >
@@ -297,11 +304,11 @@ function Requests() {
                 {/* Status Badge */}
                 <div className="position-absolute top-0 end-0 m-2">
                   <span className={`badge ${
-                    req.status === 'pending' ? 'bg-warning text-dark' :
+                    req.status === 'pending'  ? 'bg-warning text-dark' :
                     req.status === 'approved' ? 'bg-success' :
                     'bg-danger'
                   }`}>
-                    {req.status === 'pending' && <i className="bi bi-clock me-1"></i>}
+                    {req.status === 'pending'  && <i className="bi bi-clock me-1"></i>}
                     {req.status === 'approved' && <i className="bi bi-check-circle me-1"></i>}
                     {req.status === 'rejected' && <i className="bi bi-x-circle me-1"></i>}
                     {req.status?.toUpperCase() || 'PENDING'}
@@ -444,11 +451,54 @@ function Requests() {
           <div className="col-md-4 mb-3">
             <h6 className="fw-bold">❌ Rejected</h6>
             <small className="text-muted">
-              The owner declined this time. Don't worry, there are many other items to explore!
+              The owner declined your request. The item may no longer be available.
             </small>
           </div>
         </div>
       </div>
+
+      {/* ── Animated Toast Notification ─────────────────────────────────── */}
+      {showToast && (
+        <div
+          className="position-fixed top-50 start-50 translate-middle"
+          style={{
+            zIndex: 9999,
+            animation: "fadeInScale 0.3s ease-out",
+            width: "90%",
+            maxWidth: "400px",
+          }}
+        >
+          <div
+            className={`alert alert-${
+              toastMessage.type === "success" ? "success" :
+              toastMessage.type === "error"   ? "danger"  :
+              toastMessage.type === "warning" ? "warning" : "info"
+            } d-flex align-items-center shadow-lg mb-0`}
+            role="alert"
+            style={{ borderRadius: "12px", border: "none", padding: "1rem 1.5rem" }}
+          >
+            <i
+              className={`bi ${
+                toastMessage.type === "success" ? "bi-check-circle-fill" :
+                toastMessage.type === "error"   ? "bi-x-circle-fill"     :
+                toastMessage.type === "warning" ? "bi-exclamation-triangle-fill" :
+                "bi-info-circle-fill"
+              } me-3`}
+              style={{ fontSize: "2rem" }}
+            ></i>
+            <div className="flex-grow-1 fw-semibold">{toastMessage.text}</div>
+          </div>
+        </div>
+      )}
+
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes fadeInScale {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(1);   }
+        }
+      `}</style>
+      {/* ──────────────────────────────────────────────────────────────────── */}
     </div>
   );
 }
