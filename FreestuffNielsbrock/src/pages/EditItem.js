@@ -3,12 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
+import { validateFile } from "../utils/validation";
 
 function EditItem() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     name: "",
     price: "0",
@@ -96,14 +97,22 @@ function EditItem() {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image size should be less than 5MB");
-        return;
-      }
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    // ✅ SECURITY FIX: Validate file size AND MIME type (not just filename extension)
+    const { valid, error } = validateFile(file, {
+      maxSize: 5 * 1024 * 1024, // 5MB
+      allowedTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+    });
+
+    if (!valid) {
+      alert(error);
+      e.target.value = ""; // Reset file input
+      return;
     }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e) => {
@@ -133,7 +142,7 @@ function EditItem() {
         setMessage("Uploading new image...");
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('item-images')
           .upload(fileName, imageFile, {
@@ -180,13 +189,12 @@ function EditItem() {
 
       if (error) throw error;
 
-      setMessage("✅ Item updated successfully! Redirecting...");
+      setMessage("✅ Item updated successfully!");
       setMessageType("success");
-
-      setTimeout(() => navigate(`/product/${id}`), 1500);
-    } catch (err) {
-      console.error('Error updating item:', err);
-      setMessage("❌ Failed to update item: " + err.message);
+      setTimeout(() => navigate(`/product/${id}`), 2000);
+    } catch (error) {
+      console.error("Error updating item:", error);
+      setMessage("❌ Failed to update item: " + error.message);
       setMessageType("danger");
     } finally {
       setUploading(false);
@@ -195,246 +203,233 @@ function EditItem() {
 
   if (loading) {
     return (
-      <div className="container my-5 text-center">
-        <div className="spinner-border text-primary" role="status">
+      <div className="container py-5 text-center">
+        <div className="spinner-border" style={{ color: "#003087" }} role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p className="mt-3">Loading item...</p>
       </div>
     );
   }
 
   return (
-    <div className="container my-5" style={{ maxWidth: "700px" }}>
-      <button
-        className="btn btn-link mb-3 text-decoration-none"
-        onClick={() => navigate(`/product/${id}`)}
-        style={{ color: "#003087" }}
-      >
-        <i className="bi bi-arrow-left me-2"></i>
-        Back to Item
-      </button>
-
-      <h2 className="text-center mb-4">
-        <i className="bi bi-pencil-square me-2"></i>
-        Edit Your Item
+    <div className="container py-5" style={{ maxWidth: "700px" }}>
+      <h2 className="mb-4 fw-bold" style={{ color: "#003087" }}>
+        <i className="bi bi-pencil-square me-2"></i>Edit Item
       </h2>
 
       {message && (
-        <div className={`alert alert-${messageType} text-center`} role="alert">
+        <div className={`alert alert-${messageType}`} role="alert">
           {message}
         </div>
       )}
 
-      <div className="card shadow-lg border-0">
-        <div className="card-body p-4">
-          <form onSubmit={handleSubmit}>
-            {/* Item Name */}
-            <div className="mb-3">
-              <label htmlFor="name" className="form-label fw-bold">
-                Item Name <span className="text-danger">*</span>
+      <div className="card border-0 shadow-sm p-4">
+        <form onSubmit={handleSubmit}>
+          {/* Item Name */}
+          <div className="mb-3">
+            <label htmlFor="name" className="form-label fw-bold">
+              Item Name <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              className="form-control"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="e.g. Marketing Textbook"
+              required
+              disabled={uploading}
+            />
+          </div>
+
+          {/* Category and Condition */}
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label htmlFor="category" className="form-label fw-bold">
+                Category
               </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                className="form-control form-control-lg"
-                value={formData.name}
+              <select
+                id="category"
+                name="category"
+                className="form-select form-select-lg"
+                value={formData.category}
                 onChange={handleChange}
-                placeholder="e.g. Marketing Textbook"
-                required
-                disabled={uploading}
-              />
-            </div>
-
-            {/* Category and Condition */}
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <label htmlFor="category" className="form-label fw-bold">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  className="form-select form-select-lg"
-                  value={formData.category}
-                  onChange={handleChange}
-                  disabled={uploading}
-                >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="condition" className="form-label fw-bold">
-                  Condition
-                </label>
-                <select
-                  id="condition"
-                  name="condition"
-                  className="form-select form-select-lg"
-                  value={formData.condition}
-                  onChange={handleChange}
-                  disabled={uploading}
-                >
-                  {conditions.map((cond) => (
-                    <option key={cond} value={cond}>
-                      {cond}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="mb-3">
-              <label htmlFor="description" className="form-label fw-bold">
-                Description <span className="text-danger">*</span>
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                className="form-control"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Provide details about the item"
-                rows="4"
-                required
-                disabled={uploading}
-              ></textarea>
-            </div>
-
-            {/* Image Upload */}
-            <div className="mb-3">
-              <label htmlFor="image" className="form-label fw-bold">
-                Item Image
-              </label>
-              <input
-                type="file"
-                id="image"
-                className="form-control"
-                accept="image/*"
-                onChange={handleImageChange}
-                disabled={uploading}
-              />
-              <small className="text-muted">
-                Optional: Upload a new photo to replace the current one (Max 5MB)
-              </small>
-              {imagePreview && (
-                <div className="mt-3">
-                  <p className="small text-muted">
-                    {imageFile ? "New image preview:" : "Current image:"}
-                  </p>
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="img-fluid rounded shadow-sm" 
-                    style={{ maxWidth: "300px", maxHeight: "300px", objectFit: "cover" }}
-                  />
-                  {imageFile && (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger mt-2 d-block"
-                      onClick={() => {
-                        setImageFile(null);
-                        setImagePreview(currentImage);
-                      }}
-                      disabled={uploading}
-                    >
-                      Cancel New Image
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="mb-3">
-              <label htmlFor="location" className="form-label fw-bold">
-                Pickup Location
-              </label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                className="form-control"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="e.g. Building A, Room 203"
-                disabled={uploading}
-              />
-            </div>
-
-            {/* WhatsApp Number */}
-            <div className="mb-3">
-              <label htmlFor="whatsapp_number" className="form-label fw-bold">
-                WhatsApp Number <span className="text-danger">*</span>
-              </label>
-              <input
-                type="tel"
-                id="whatsapp_number"
-                name="whatsapp_number"
-                className="form-control"
-                value={formData.whatsapp_number}
-                onChange={handleChange}
-                placeholder="e.g. +45 40 40 40 40"
-                required
-                disabled={uploading}
-              />
-            </div>
-
-            {/* Price */}
-            <div className="mb-3">
-              <label htmlFor="price" className="form-label fw-bold">
-                Price (DKK)
-              </label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                className="form-control"
-                value={formData.price}
-                onChange={handleChange}
-                min="0"
-                disabled={uploading}
-              />
-              <small className="text-muted">
-                Set to 0 for free items
-              </small>
-            </div>
-
-            <div className="d-grid gap-2">
-              <button
-                type="submit"
-                className="btn btn-primary btn-lg"
                 disabled={uploading}
               >
-                {uploading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-save me-2"></i>
-                    Save Changes
-                  </>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-6">
+              <label htmlFor="condition" className="form-label fw-bold">
+                Condition
+              </label>
+              <select
+                id="condition"
+                name="condition"
+                className="form-select form-select-lg"
+                value={formData.condition}
+                onChange={handleChange}
+                disabled={uploading}
+              >
+                {conditions.map((cond) => (
+                  <option key={cond} value={cond}>
+                    {cond}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="mb-3">
+            <label htmlFor="description" className="form-label fw-bold">
+              Description <span className="text-danger">*</span>
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              className="form-control"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Provide details about the item"
+              rows="4"
+              required
+              disabled={uploading}
+            ></textarea>
+          </div>
+
+          {/* Image Upload */}
+          <div className="mb-3">
+            <label htmlFor="image" className="form-label fw-bold">
+              Item Image
+            </label>
+            <input
+              type="file"
+              id="image"
+              className="form-control"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleImageChange}
+              disabled={uploading}
+            />
+            <small className="text-muted">
+              Optional: Upload a new photo to replace the current one (Max 5MB, JPEG/PNG/GIF/WEBP only)
+            </small>
+            {imagePreview && (
+              <div className="mt-3">
+                <p className="small text-muted">
+                  {imageFile ? "New image preview:" : "Current image:"}
+                </p>
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="img-fluid rounded shadow-sm"
+                  style={{ maxWidth: "300px", maxHeight: "300px", objectFit: "cover" }}
+                />
+                {imageFile && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-danger mt-2 d-block"
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview(currentImage);
+                    }}
+                    disabled={uploading}
+                  >
+                    Cancel New Image
+                  </button>
                 )}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => navigate(`/product/${id}`)}
-                disabled={uploading}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+              </div>
+            )}
+          </div>
+
+          {/* Location */}
+          <div className="mb-3">
+            <label htmlFor="location" className="form-label fw-bold">
+              Pickup Location
+            </label>
+            <input
+              type="text"
+              id="location"
+              name="location"
+              className="form-control"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="e.g. Building A, Room 203"
+              disabled={uploading}
+            />
+          </div>
+
+          {/* WhatsApp Number */}
+          <div className="mb-3">
+            <label htmlFor="whatsapp_number" className="form-label fw-bold">
+              WhatsApp Number <span className="text-danger">*</span>
+            </label>
+            <input
+              type="tel"
+              id="whatsapp_number"
+              name="whatsapp_number"
+              className="form-control"
+              value={formData.whatsapp_number}
+              onChange={handleChange}
+              placeholder="e.g. +45 40 40 40 40"
+              required
+              disabled={uploading}
+            />
+          </div>
+
+          {/* Price */}
+          <div className="mb-3">
+            <label htmlFor="price" className="form-label fw-bold">
+              Price (DKK)
+            </label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              className="form-control"
+              value={formData.price}
+              onChange={handleChange}
+              min="0"
+              disabled={uploading}
+            />
+            <small className="text-muted">
+              Set to 0 for free items
+            </small>
+          </div>
+
+          <div className="d-grid gap-2">
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg"
+              disabled={uploading}
+            >
+              {uploading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-save me-2"></i>
+                  Save Changes
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => navigate(`/product/${id}`)}
+              disabled={uploading}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
 
       <div className="alert alert-warning mt-4">

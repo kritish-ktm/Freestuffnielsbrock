@@ -22,7 +22,7 @@ function AdminLogin() {
       }
 
       // Sign in with email/password
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -31,10 +31,10 @@ function AdminLogin() {
 
       // Check if user is admin
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (user?.user_metadata?.is_admin) {
-        // Store admin session
-        localStorage.setItem("admin_token", data.session.access_token);
+        // ✅ SECURITY FIX: Do NOT store token in localStorage (XSS risk).
+        // Supabase already manages the session securely via its own storage.
         navigate("/admin/dashboard", { replace: true });
       } else {
         setError("You don't have admin access");
@@ -49,7 +49,7 @@ function AdminLogin() {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center" 
+    <div className="min-vh-100 d-flex align-items-center justify-content-center"
       style={{ background: "linear-gradient(135deg, #003087 0%, #00A9E0 100%)" }}>
       <div className="card shadow-lg border-0 rounded-lg" style={{ maxWidth: "420px", width: "100%" }}>
         <div className="card-body p-5 text-center">
@@ -65,9 +65,9 @@ function AdminLogin() {
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
               <i className="bi bi-exclamation-circle me-2"></i>
               {error}
-              <button 
-                type="button" 
-                className="btn-close" 
+              <button
+                type="button"
+                className="btn-close"
                 onClick={() => setError("")}
               ></button>
             </div>

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
+import { validateFile } from "../utils/validation";
 
 function PostItem() {
   const navigate = useNavigate();
@@ -42,15 +43,22 @@ function PostItem() {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image size should be less than 5MB");
-        return;
-      }
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    // ✅ SECURITY FIX: Validate file size AND MIME type (not just filename extension)
+    const { valid, error } = validateFile(file, {
+      maxSize: 5 * 1024 * 1024, // 5MB
+      allowedTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+    });
+
+    if (!valid) {
+      alert(error);
+      e.target.value = ""; // Reset file input
+      return;
     }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e) => {
@@ -85,7 +93,7 @@ function PostItem() {
       setMessage("Uploading image...");
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('item-images')
         .upload(fileName, imageFile, {
@@ -104,11 +112,10 @@ function PostItem() {
         .getPublicUrl(fileName);
 
       imageUrl = publicUrl;
-      console.log('Image uploaded:', imageUrl);
 
       // Calculate expiry date (60 days from now)
       const now = new Date();
-      const expiryDate = new Date(now.getTime() + (60 * 24 * 60 * 60 * 1000)); // 60 days in milliseconds
+      const expiryDate = new Date(now.getTime() + (60 * 24 * 60 * 60 * 1000));
 
       // Insert item into database
       setMessage("Saving item...");
@@ -128,34 +135,20 @@ function PostItem() {
             posted_by_email: user.email,
             posted_by_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "Anonymous",
             created_at: new Date().toISOString(),
-            expiry_date: expiryDate.toISOString(), // ← ADD 60-DAY EXPIRY
-            status: 'active', // ← EXPLICITLY SET STATUS
+            expiry_date: expiryDate.toISOString(),
+            status: 'active',
           },
         ])
         .select();
 
       if (error) throw error;
 
-      setMessage("✅ Item posted successfully! It will expire in 60 days. Redirecting...");
+      setMessage("✅ Item posted successfully! It will expire in 60 days.");
       setMessageType("success");
-
-      // Reset form
-      setFormData({
-        name: "",
-        price: "0",
-        description: "",
-        category: "General",
-        condition: "Good",
-        location: "",
-        whatsapp_number: "",
-      });
-      setImageFile(null);
-      setImagePreview(null);
-
       setTimeout(() => navigate("/products"), 2000);
-    } catch (err) {
-      console.error('Error posting item:', err);
-      setMessage("❌ Failed to post item: " + err.message);
+    } catch (error) {
+      console.error("Error posting item:", error);
+      setMessage("❌ Failed to post item: " + error.message);
       setMessageType("danger");
     } finally {
       setUploading(false);
@@ -163,219 +156,216 @@ function PostItem() {
   };
 
   return (
-    <div className="container my-5" style={{ maxWidth: "700px" }}>
-      <h2 className="text-center mb-4">
-        <i className="bi bi-plus-circle me-2"></i>
-        Post a Free Item
+    <div className="container py-5" style={{ maxWidth: "700px" }}>
+      <h2 className="mb-4 fw-bold" style={{ color: "#003087" }}>
+        <i className="bi bi-upload me-2"></i>Post an Item
       </h2>
 
       {message && (
-        <div className={`alert alert-${messageType} text-center`} role="alert">
+        <div className={`alert alert-${messageType}`} role="alert">
           {message}
         </div>
       )}
 
-      <div className="card shadow-lg border-0">
-        <div className="card-body p-4">
-          <form onSubmit={handleSubmit}>
-            {/* Item Name */}
-            <div className="mb-3">
-              <label htmlFor="name" className="form-label fw-bold">
-                Item Name <span className="text-danger">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                className="form-control form-control-lg"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="e.g. Marketing Textbook"
-                required
-                disabled={uploading}
-              />
-            </div>
-
-            {/* Category and Condition */}
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <label htmlFor="category" className="form-label fw-bold">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  className="form-select form-select-lg"
-                  value={formData.category}
-                  onChange={handleChange}
-                  disabled={uploading}
-                >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="condition" className="form-label fw-bold">
-                  Condition
-                </label>
-                <select
-                  id="condition"
-                  name="condition"
-                  className="form-select form-select-lg"
-                  value={formData.condition}
-                  onChange={handleChange}
-                  disabled={uploading}
-                >
-                  {conditions.map((cond) => (
-                    <option key={cond} value={cond}>
-                      {cond}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="mb-3">
-              <label htmlFor="description" className="form-label fw-bold">
-                Description <span className="text-danger">*</span>
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                className="form-control"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Provide details about the item, its condition, and why you're giving it away"
-                rows="4"
-                required
-                disabled={uploading}
-              ></textarea>
-            </div>
-
-            {/* Image Upload - REQUIRED */}
-            <div className="mb-3">
-              <label htmlFor="image" className="form-label fw-bold">
-                Item Image <span className="text-danger">*</span>
-              </label>
-              <input
-                type="file"
-                id="image"
-                className="form-control"
-                accept="image/*"
-                onChange={handleImageChange}
-                disabled={uploading}
-                required
-              />
-              <small className="text-muted">
-                Required: Upload a photo of your item (Max 5MB)
-              </small>
-              {imagePreview && (
-                <div className="mt-3">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="img-fluid rounded shadow-sm" 
-                    style={{ maxWidth: "300px", maxHeight: "300px", objectFit: "cover" }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-danger mt-2 d-block"
-                    onClick={() => {
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }}
-                    disabled={uploading}
-                  >
-                    Remove Image
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="mb-3">
-              <label htmlFor="location" className="form-label fw-bold">
-                Pickup Location
-              </label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                className="form-control"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="e.g. Building A, Room 203"
-                disabled={uploading}
-              />
-              <small className="text-muted">
-                Optional: Where can people pick up the item?
-              </small>
-            </div>
-
-            {/* WhatsApp Number */}
-            <div className="mb-3">
-              <label htmlFor="whatsapp_number" className="form-label fw-bold">
-                WhatsApp Number <span className="text-danger">*</span>
-              </label>
-              <input
-                type="tel"
-                id="whatsapp_number"
-                name="whatsapp_number"
-                className="form-control"
-                value={formData.whatsapp_number}
-                onChange={handleChange}
-                placeholder="e.g. +45 40 40 40 40"
-                required
-                disabled={uploading}
-              />
-              <small className="text-muted">
-                Required: Your WhatsApp number for interested buyers to contact you
-              </small>
-            </div>
-
-            {/* Price */}
-            <div className="mb-3">
-              <label htmlFor="price" className="form-label fw-bold">
-                Price (DKK)
-              </label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                className="form-control"
-                value={formData.price}
-                onChange={handleChange}
-                min="0"
-                disabled={uploading}
-              />
-              <small className="text-muted">
-                Set to 0 for free items (recommended)
-              </small>
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-success btn-lg w-100 mt-3"
+      <div className="card border-0 shadow-sm p-4">
+        <form onSubmit={handleSubmit}>
+          {/* Item Name */}
+          <div className="mb-3">
+            <label htmlFor="name" className="form-label fw-bold">
+              Item Name <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              className="form-control"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="e.g. Marketing Textbook"
+              required
               disabled={uploading}
-            >
-              {uploading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                  Posting...
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-upload me-2"></i>
-                  Post Item
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+            />
+          </div>
+
+          {/* Category and Condition */}
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label htmlFor="category" className="form-label fw-bold">
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                className="form-select form-select-lg"
+                value={formData.category}
+                onChange={handleChange}
+                disabled={uploading}
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-6">
+              <label htmlFor="condition" className="form-label fw-bold">
+                Condition
+              </label>
+              <select
+                id="condition"
+                name="condition"
+                className="form-select form-select-lg"
+                value={formData.condition}
+                onChange={handleChange}
+                disabled={uploading}
+              >
+                {conditions.map((cond) => (
+                  <option key={cond} value={cond}>
+                    {cond}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="mb-3">
+            <label htmlFor="description" className="form-label fw-bold">
+              Description <span className="text-danger">*</span>
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              className="form-control"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Provide details about the item, its condition, and why you're giving it away"
+              rows="4"
+              required
+              disabled={uploading}
+            ></textarea>
+          </div>
+
+          {/* Image Upload - REQUIRED */}
+          <div className="mb-3">
+            <label htmlFor="image" className="form-label fw-bold">
+              Item Image <span className="text-danger">*</span>
+            </label>
+            <input
+              type="file"
+              id="image"
+              className="form-control"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleImageChange}
+              disabled={uploading}
+              required
+            />
+            <small className="text-muted">
+              Required: Upload a photo of your item (Max 5MB, JPEG/PNG/GIF/WEBP only)
+            </small>
+            {imagePreview && (
+              <div className="mt-3">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="img-fluid rounded shadow-sm"
+                  style={{ maxWidth: "300px", maxHeight: "300px", objectFit: "cover" }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger mt-2 d-block"
+                  onClick={() => {
+                    setImageFile(null);
+                    setImagePreview(null);
+                  }}
+                  disabled={uploading}
+                >
+                  Remove Image
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Location */}
+          <div className="mb-3">
+            <label htmlFor="location" className="form-label fw-bold">
+              Pickup Location
+            </label>
+            <input
+              type="text"
+              id="location"
+              name="location"
+              className="form-control"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="e.g. Building A, Room 203"
+              disabled={uploading}
+            />
+            <small className="text-muted">
+              Optional: Where can people pick up the item?
+            </small>
+          </div>
+
+          {/* WhatsApp Number */}
+          <div className="mb-3">
+            <label htmlFor="whatsapp_number" className="form-label fw-bold">
+              WhatsApp Number <span className="text-danger">*</span>
+            </label>
+            <input
+              type="tel"
+              id="whatsapp_number"
+              name="whatsapp_number"
+              className="form-control"
+              value={formData.whatsapp_number}
+              onChange={handleChange}
+              placeholder="e.g. +45 40 40 40 40"
+              required
+              disabled={uploading}
+            />
+            <small className="text-muted">
+              Required: Your WhatsApp number for interested people to contact you
+            </small>
+          </div>
+
+          {/* Price */}
+          <div className="mb-3">
+            <label htmlFor="price" className="form-label fw-bold">
+              Price (DKK)
+            </label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              className="form-control"
+              value={formData.price}
+              onChange={handleChange}
+              min="0"
+              disabled={uploading}
+            />
+            <small className="text-muted">
+              Set to 0 for free items (recommended)
+            </small>
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-success btn-lg w-100 mt-3"
+            disabled={uploading}
+          >
+            {uploading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                Posting...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-upload me-2"></i>
+                Post Item
+              </>
+            )}
+          </button>
+        </form>
       </div>
 
       {/* Tips Section */}
