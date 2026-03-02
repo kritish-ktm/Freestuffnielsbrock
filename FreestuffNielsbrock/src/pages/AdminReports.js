@@ -82,11 +82,11 @@ function AdminReports() {
 
       if (error) throw error;
 
-      setMessage(`✅ Report marked as ${newStatus}`);
+      setMessage(`Report marked as ${newStatus}`);
       setMessageType("success");
       fetchReports();
     } catch (error) {
-      setMessage("❌ Error: " + error.message);
+      setMessage(" Error: " + error.message);
       setMessageType("danger");
     }
   };

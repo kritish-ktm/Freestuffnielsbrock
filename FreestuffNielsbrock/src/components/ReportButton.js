@@ -105,7 +105,7 @@ function ReportButton({ itemId, itemTitle }) {
         return;
       }
 
-      setSuccessMsg("✅ Report submitted. Thanks!");
+      setSuccessMsg(" Report submitted. Thanks!");
       resetForm();
 
       // Optional: auto close after success (smooth, no glitch)

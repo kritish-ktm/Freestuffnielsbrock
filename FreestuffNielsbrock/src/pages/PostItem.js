@@ -143,12 +143,12 @@ function PostItem() {
 
       if (error) throw error;
 
-      setMessage("✅ Item posted successfully! It will expire in 60 days.");
+      setMessage(" Item posted successfully! It will expire in 60 days.");
       setMessageType("success");
       setTimeout(() => navigate("/products"), 2000);
     } catch (error) {
       console.error("Error posting item:", error);
-      setMessage("❌ Failed to post item: " + error.message);
+      setMessage(" Failed to post item: " + error.message);
       setMessageType("danger");
     } finally {
       setUploading(false);

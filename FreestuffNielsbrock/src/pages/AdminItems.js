@@ -62,7 +62,7 @@ function AdminItems() {
 
       if (error) throw error;
 
-      setMessage(`✅ Item ${!currentFlag ? "flagged" : "unflagged"} successfully`);
+      setMessage(` Item ${!currentFlag ? "flagged" : "unflagged"} successfully`);
       setMessageType("success");
       fetchItems();
     } catch (error) {
@@ -82,7 +82,7 @@ function AdminItems() {
 
       if (error) throw error;
 
-      setMessage("✅ Item deleted successfully");
+      setMessage(" Item deleted successfully");
       setMessageType("success");
       fetchItems();
     } catch (error) {
