@@ -1,3 +1,4 @@
+// src/pages/AuthCallback.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
@@ -9,11 +10,13 @@ function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Wait a moment for Supabase to process the callback
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Give Supabase a moment to process the OAuth/magic-link callback
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // Get the current user
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
 
         if (error) {
           console.error("Error getting user:", error);
@@ -29,14 +32,14 @@ function AuthCallback() {
           const section = user.user_metadata?.section;
 
           if (fullName && section) {
-            console.log("Profile complete, going to home");
+            // Profile complete — go home
             navigate("/", { replace: true });
           } else {
-            console.log("Profile incomplete, going to onboarding");
+            // New user — collect profile details
             navigate("/onboarding", { replace: true });
           }
         } else {
-          console.error("No user found");
+          console.error("No user found after callback");
           navigate("/login", { replace: true });
         }
       } catch (err) {
@@ -51,14 +54,23 @@ function AuthCallback() {
   }, [navigate]);
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center">
-      <div className="text-center">
-        <div className="spinner-border text-primary mb-3" role="status">
+    <div
+      className="min-vh-100 d-flex align-items-center justify-content-center"
+      style={{ background: "linear-gradient(135deg, #667788 0%, #0b0f3b 100%)" }}
+    >
+      <div className="text-center text-white">
+        <div
+          className="spinner-border mb-3"
+          role="status"
+          style={{ width: "3rem", height: "3rem", color: "#00A9E0" }}
+        >
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p className="text-muted">Completing login...</p>
+        <p className="fw-semibold" style={{ color: "rgba(255,255,255,0.85)", fontSize: "1.1rem" }}>
+          Completing login...
+        </p>
         {!loading && (
-          <small className="text-danger d-block mt-2">
+          <small className="d-block mt-2" style={{ color: "#ffcc80" }}>
             Taking longer than expected. Redirecting...
           </small>
         )}
