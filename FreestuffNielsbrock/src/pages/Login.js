@@ -172,12 +172,12 @@ function Login() {
               textAlign: "center",
             }}
           >
-            <div
-              className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-              style={{ width: 60, height: 60, background: "rgba(255,255,255,0.15)", fontSize: "1.8rem" }}
-            >
-              <i className="bi bi-gift-fill text-white"></i>
-            </div>
+            <img
+              src="/freestuffnielsbrocklogo.png"
+              alt="Free Stuff Niels Brock"
+              className="mb-2"
+              style={{ height: 72, width: 72, objectFit: "contain", borderRadius: "50%", background: "rgba(255,255,255,0.15)", padding: "4px" }}
+            />
             <h2 className="fw-bold text-white mb-1" style={{ fontSize: "1.5rem" }}>
               Free Stuff NB
             </h2>
